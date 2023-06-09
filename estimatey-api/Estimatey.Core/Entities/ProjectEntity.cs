@@ -6,5 +6,7 @@ public class ProjectEntity
 
     public string DevOpsProjectName { get; set; } = "";
 
-    public string DevOpsContinuationToken { get; set; } = "";
+    public string? WorkItemsContinuationToken { get; set; }
+
+    public string? LinksContinuationToken { get; set; }
 }

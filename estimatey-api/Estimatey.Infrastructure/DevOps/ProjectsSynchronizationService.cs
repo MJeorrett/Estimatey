@@ -6,16 +6,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Estimatey.Infrastructure.DevOps;
 
-internal class SynchronizationService : BackgroundService
+internal class ProjectsSynchronizationService : BackgroundService
 {
     private const int PauseBetweenSyncsMilliseconds = 8000;
 
     private readonly IServiceProvider _services;
     private readonly ILogger _logger;
 
-    public SynchronizationService(
+    public ProjectsSynchronizationService(
         IServiceProvider services,
-        ILogger<WorkItemSynchronizationService> logger)
+        ILogger<ProjectsSynchronizationService> logger)
     {
         _services = services;
         _logger = logger;
@@ -42,6 +42,7 @@ internal class SynchronizationService : BackgroundService
         using var scope = _services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var workItemSynchronizer = scope.ServiceProvider.GetRequiredService<WorkItemSynchronizationService>();
+        var workItemLinkSynchronizer = scope.ServiceProvider.GetRequiredService<LinksSynchronizationService>();
 
         var projects = await dbContext.Projects.ToListAsync();
 
@@ -50,6 +51,8 @@ internal class SynchronizationService : BackgroundService
         foreach (var project in projects)
         {
             await workItemSynchronizer.SyncProject(project);
+
+            await workItemLinkSynchronizer.SyncProject(project);
 
             if (stoppingToken.IsCancellationRequested) return;
         }

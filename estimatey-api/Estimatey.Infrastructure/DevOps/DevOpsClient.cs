@@ -7,6 +7,7 @@ using System.Net;
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.VisualStudio.Services.Client;
+using System;
 
 internal class DevOpsClient
 {
@@ -34,30 +35,56 @@ internal class DevOpsClient
         _clientSecret = options.Value.ClientSecret;
     }
 
-    public async Task<WorkItemRevisionsDto> GetWorkItemRevisions(string projectName, string continuationToken)
+    public async Task<WorkItemRevisionsDto> GetWorkItemRevisionsBatch(string projectName, string? continuationToken)
     {
         _logger.LogInformation("Fetching work item revisions for project {projectName} with continuation token {continuationToken}.", projectName, continuationToken);
 
         string uri = BuildGetWorkItemRevisionsUri(projectName, continuationToken);
         await EnsureAccessTokenSet();
 
-        var workItemRevisionsResponse = await _httpClient.GetAsync(uri);
+        var response = await _httpClient.GetAsync(uri);
 
-        _logger.LogDebug("Received work item revisions response from DevOps for project {projectName}:\n{response}", await workItemRevisionsResponse.Content.ReadAsStringAsync(), projectName);
+        _logger.LogDebug("Received work item revisions response from DevOps for project {projectName}:\n{response}", await response.Content.ReadAsStringAsync(), projectName);
 
-        if (workItemRevisionsResponse.StatusCode != HttpStatusCode.OK)
+        if (response.StatusCode != HttpStatusCode.OK)
         {
-            _logger.LogWarning("Fetching work item revisions from DevOps returned unexpected status code {statusCode} and body {responseBody} when syncing project {projectName}.", workItemRevisionsResponse.StatusCode, await workItemRevisionsResponse.Content.ReadAsStringAsync(), projectName);
+            _logger.LogWarning("Fetching work item revisions from DevOps returned unexpected status code {statusCode} and body {responseBody} when syncing project {projectName}.", response.StatusCode, await response.Content.ReadAsStringAsync(), projectName);
 
             throw new Exception($"Failed to fetch work item revisions from uri {uri}.");
         }
 
-        var workItemRevisionsDto = await workItemRevisionsResponse.Content.ReadFromJsonAsync<WorkItemRevisionsDto>() ??
+        var workItemRevisionsDto = await response.Content.ReadFromJsonAsync<WorkItemRevisionsDto>() ??
             throw new Exception("Failed to parse response from get work item revisions response.");
 
         _logger.LogInformation("Received {numberOfWorkItemRevisions} work item revisions from DevOps for project {projectName}.", workItemRevisionsDto.Values.Count, projectName);
 
         return workItemRevisionsDto;
+    }
+
+    public async Task<WorkItemLinksDto> GetWorkItemLinksBatch(string projectName, string? continuationToken)
+    {
+        _logger.LogInformation("Fetching work item links for project {projectName} with continuation token {continuationToken}.", projectName, continuationToken);
+
+        string uri = BuildGetWorkItemLinksUri(projectName, continuationToken);
+        await EnsureAccessTokenSet();
+
+        var response = await _httpClient.GetAsync(uri);
+
+        _logger.LogDebug("Received work item links response from DevOps for project {projectName}:\n{response}", await response.Content.ReadAsStringAsync(), projectName);
+
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            _logger.LogWarning("Fetching work item links from DevOps returned unexpected status code {statusCode} and body {responseBody} when syncing project {projectName}.", response.StatusCode, await response.Content.ReadAsStringAsync(), projectName);
+
+            throw new Exception($"Failed to fetch work item links from uri {uri}.");
+        }
+
+        var workItemlinksDto = await response.Content.ReadFromJsonAsync<WorkItemLinksDto>() ??
+            throw new Exception("Failed to parse response from get work item links response.");
+
+        _logger.LogInformation("Received {numberOfWorkItemLinks} work item links from DevOps for project {projectName}.", workItemlinksDto.Values.Count, projectName);
+
+        return workItemlinksDto;
     }
 
     private async Task EnsureAccessTokenSet()
@@ -71,9 +98,21 @@ internal class DevOpsClient
         _httpClient.DefaultRequestHeaders.Authorization = new("Bearer", accessToken.Token);
     }
 
-    private string BuildGetWorkItemRevisionsUri(string projectName, string continuationToken)
+    private string BuildGetWorkItemRevisionsUri(string projectName, string? continuationToken)
     {
         var uri = $"https://dev.azure.com/{_organizationName}/{projectName}/_apis/wit/reporting/workitemrevisions?api-version=4.1";
+
+        if (!string.IsNullOrWhiteSpace(continuationToken))
+        {
+            uri += $"&continuationToken={continuationToken}";
+        }
+
+        return uri;
+    }
+
+    private string BuildGetWorkItemLinksUri(string projectName, string? continuationToken)
+    {
+        var uri = $"https://dev.azure.com/{_organizationName}/{projectName}/_apis/wit/reporting/workitemlinks?api-version=4.1";
 
         if (!string.IsNullOrWhiteSpace(continuationToken))
         {
