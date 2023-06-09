@@ -2,7 +2,7 @@
 
 namespace Estimatey.Infrastructure.DevOps.Models;
 
-internal class WorkItemRevisionsDto
+internal record WorkItemRevisionsDto
 {
     public List<WorkItemRevision> Values { get; init; } = new();
 
@@ -10,10 +10,10 @@ internal class WorkItemRevisionsDto
 
     public string ContinuationToken { get; init; } = "";
 
-    public bool isLastBatch { get; init; }
+    public bool IsLastBatch { get; init; }
 }
 
-internal class WorkItemRevision
+internal record WorkItemRevision
 {
     public int Id { get; init; }
 
@@ -30,7 +30,7 @@ internal class WorkItemRevision
 
 }
 
-internal class WorkItemRevisionField
+internal record WorkItemRevisionField
 {
     [JsonPropertyName("System.TeamProject")]
     public string TeamProject { get; init; } = "";

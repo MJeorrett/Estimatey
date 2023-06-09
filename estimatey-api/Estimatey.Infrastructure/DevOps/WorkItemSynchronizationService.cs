@@ -27,23 +27,21 @@ internal class WorkItemSynchronizationService
 
     public async Task SyncProject(ProjectEntity project)
     {
-        _logger.LogInformation("Syncing project {projectName}.", project.DevOpsProjectName);
+        _logger.LogInformation("Syncing work items for project {projectName}.", project.DevOpsProjectName);
 
-        var workItemRevisionsDto = await _devOpsClient.GetWorkItemRevisions(project.DevOpsProjectName, project.DevOpsContinuationToken)
-;
+        var workItemRevisionsDto = await _devOpsClient.GetWorkItemRevisionsBatch(project.DevOpsProjectName, project.WorkItemsContinuationToken);
 
-        await ProcessWorkItemRevisions(_dbContext, project, workItemRevisionsDto);
+        await ProcessWorkItemRevisions(project, workItemRevisionsDto);
 
-        _logger.LogInformation("Successfully synced project {projectName}.", project.DevOpsProjectName);
+        _logger.LogInformation("Successfully synced work items for project {projectName}.", project.DevOpsProjectName);
 
-        if (!workItemRevisionsDto.isLastBatch)
+        if (!workItemRevisionsDto.IsLastBatch)
         {
             await SyncProject(project);
         }
     }
 
     private async Task ProcessWorkItemRevisions(
-        ApplicationDbContext dbContext,
         ProjectEntity project,
         WorkItemRevisionsDto workItemRevisionsDto)
     {
@@ -53,7 +51,7 @@ internal class WorkItemSynchronizationService
 
         _logger.LogDebug("Upserting {tagNamesCount} tag names.", allTagNames.Count);
 
-        await UpsertTags(dbContext, allTagNames);
+        await UpsertTags(allTagNames);
 
         var workItemRevisions = workItemRevisionsDto.Values
             .GroupBy(_ => _.Id)
@@ -70,11 +68,11 @@ internal class WorkItemSynchronizationService
                     {
                         _logger.LogDebug("Upserting Feature {id}.", workItemRevision.Id);
 
-                        var existingFeature = await dbContext.Features
+                        var existingFeature = await _dbContext.Features
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
-                        await UpsertWorkItem(dbContext, existingFeature, workItemRevision);
+                        await UpsertWorkItem(existingFeature, workItemRevision);
 
                         break;
                     }
@@ -83,11 +81,11 @@ internal class WorkItemSynchronizationService
                     {
                         _logger.LogDebug("Upserting User Story {id}.", workItemRevision.Id);
 
-                        var existingUserStory = await dbContext.UserStories
+                        var existingUserStory = await _dbContext.UserStories
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
-                        await UpsertWorkItem(dbContext, existingUserStory, workItemRevision);
+                        await UpsertWorkItem(existingUserStory, workItemRevision);
 
                         break;
                     }
@@ -96,11 +94,11 @@ internal class WorkItemSynchronizationService
                     {
                         _logger.LogDebug("Upserting Ticket {id}.", workItemRevision.Id);
 
-                        var existingUserStory = await dbContext.Tickets
+                        var existingUserStory = await _dbContext.Tickets
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
-                        await UpsertWorkItem(dbContext, existingUserStory, workItemRevision);
+                        await UpsertWorkItem(existingUserStory, workItemRevision);
 
                         break;
                     }
@@ -109,18 +107,17 @@ internal class WorkItemSynchronizationService
 
         _logger.LogInformation("Setting continuation token for project {projectName} to '{continuationToken}'.", project.DevOpsProjectName, workItemRevisionsDto.ContinuationToken);
 
-        project.DevOpsContinuationToken = workItemRevisionsDto.ContinuationToken;
+        project.WorkItemsContinuationToken = workItemRevisionsDto.ContinuationToken;
 
-        await dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
     }
 
     private async Task UpsertWorkItem<T>(
-        ApplicationDbContext dbContext,
         T? existingWorkItem,
         WorkItemRevision workItemRevision)
         where T: WorkItemEntity, new()
     {
-        var tagEntities = await dbContext.Tags.
+        var tagEntities = await _dbContext.Tags.
             Where(_ => workItemRevision.Tags.Contains(_.Name))
             .ToListAsync();
 
@@ -136,7 +133,7 @@ internal class WorkItemSynchronizationService
         {
             _logger.LogDebug("Work Item with id {id} does not exist so creating it.", workItemRevision.Id);
 
-            dbContext.Add(new T()
+            _dbContext.Add(new T()
             {
                 DevOpsId = workItemRevision.Id,
                 Title = workItemRevision.Fields.Title,
@@ -146,24 +143,22 @@ internal class WorkItemSynchronizationService
         }
     }
 
-    private static async Task UpsertTags(
-        ApplicationDbContext dbContext,
-        IEnumerable<string> tagNames)
+    private async Task UpsertTags(IEnumerable<string> tagNames)
     {
         foreach (var tagName in tagNames.Distinct())
         {
-            var existingTag = await dbContext.Tags
+            var existingTag = await _dbContext.Tags
                 .FirstOrDefaultAsync(_ => _.Name == tagName);
 
             if (existingTag is null)
             {
-                dbContext.Tags.Add(new()
+                _dbContext.Tags.Add(new()
                 {
                     Name = tagName,
                 });
             }
         }
 
-        await dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
     }
 }

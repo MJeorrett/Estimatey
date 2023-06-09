@@ -16,8 +16,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddScoped<WorkItemSynchronizationService>();
+        services.AddScoped<LinksSynchronizationService>();
 
-        services.AddHostedService<SynchronizationService>();
+        services.AddHostedService<ProjectsSynchronizationService>();
         services.AddHttpClient<DevOpsClient>();
 
         services.AddOptions<DevOpsOptions>()
