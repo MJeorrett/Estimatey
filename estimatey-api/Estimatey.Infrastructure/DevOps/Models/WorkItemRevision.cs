@@ -1,0 +1,49 @@
+﻿using System.Text.Json.Serialization;
+
+namespace Estimatey.Infrastructure.DevOps.Models;
+
+internal class WorkItemRevisionsDto
+{
+    public List<WorkItemRevision> Values { get; init; } = new();
+
+    public string NextLink { get; init; } = "";
+
+    public string ContinuationToken { get; init; } = "";
+
+    public bool isLastBatch { get; init; }
+}
+
+internal class WorkItemRevision
+{
+    public int Id { get; init; }
+
+    public int Rev { get; init; }
+
+    public WorkItemRevisionField Fields { get; init; } = new();
+
+    public List<string> Tags => Fields.RawTags.Length == 0 ?
+        new List<string>() :
+        Fields.RawTags
+            .Split(";")
+            .Select(_ => _.Trim())
+            .ToList();
+
+}
+
+internal class WorkItemRevisionField
+{
+    [JsonPropertyName("System.TeamProject")]
+    public string TeamProject { get; init; } = "";
+
+    [JsonPropertyName("System.WorkItemType")]
+    public string WorkItemType { get; init; } = "";
+
+    [JsonPropertyName("System.State")]
+    public string State { get; init; } = "";
+
+    [JsonPropertyName("System.Title")]
+    public string Title { get; init; } = "";
+
+    [JsonPropertyName("System.Tags")]
+    public string RawTags { get; init; } = "";
+}
