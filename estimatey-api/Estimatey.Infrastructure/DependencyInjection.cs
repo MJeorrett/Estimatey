@@ -15,8 +15,9 @@ public static class DependencyInjection
         services.AddPersistence(configuration);
 
         services.AddSingleton<IDateTimeService, DateTimeService>();
+        services.AddScoped<WorkItemSynchronizationService>();
 
-        services.AddHostedService<DevOpsWorkItemSynchronizer>();
+        services.AddHostedService<SynchronizationService>();
         services.AddHttpClient<DevOpsClient>();
 
         services.AddOptions<DevOpsOptions>()
