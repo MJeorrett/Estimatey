@@ -1,4 +1,4 @@
-# Estimatey
+# ![Estimatey parrot](./readme-images/estimatey-icon.png) Estimatey
 ### Takes the "Arrrrrrgh" out of software project planning and estimation.
 
 Estimatey hooks into the tools that you already use** and provides insights that you need to help with project planning and estimation.
