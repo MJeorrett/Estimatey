@@ -21,7 +21,7 @@ internal class DevOpsClient
     private string? _accessToken;
 
     public DevOpsClient(
-        ILogger<DevOpsWorkItemSynchronizer> logger,
+        ILogger<WorkItemSynchronizationService> logger,
         HttpClient httpClient,
         IOptions<DevOpsOptions> options)
     {

@@ -2,78 +2,43 @@
 using Estimatey.Infrastructure.DevOps.Models;
 using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace Estimatey.Infrastructure.DevOps;
 
-internal class DevOpsWorkItemSynchronizer : BackgroundService
+internal class WorkItemSynchronizationService
 {
     private const int PauseBetweenSyncsMilliseconds = 8000;
 
-    private readonly IServiceProvider _services;
     private readonly ILogger _logger;
     private readonly DevOpsClient _devOpsClient;
+    private readonly ApplicationDbContext _dbContext;
 
-    public DevOpsWorkItemSynchronizer(
-        IServiceProvider services,
-        ILogger<DevOpsWorkItemSynchronizer> logger,
-        DevOpsClient devOpsClient)
+    public WorkItemSynchronizationService(
+        ILogger<WorkItemSynchronizationService> logger,
+        DevOpsClient devOpsClient,
+        ApplicationDbContext dbContext)
     {
-        _services = services;
         _logger = logger;
         _devOpsClient = devOpsClient;
+        _dbContext = dbContext;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            _logger.LogInformation("Syncing projects.");
-
-            await SyncAllProjects(stoppingToken);
-
-            _logger.LogInformation("Finished syncing projects.");
-
-            if (stoppingToken.IsCancellationRequested) return;
-
-            Thread.Sleep(PauseBetweenSyncsMilliseconds);
-        }
-    }
-
-    private async Task SyncAllProjects(CancellationToken stoppingToken)
-    {
-        using var scope = _services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-        var projects = await dbContext.Projects.ToListAsync();
-
-        _logger.LogInformation("Syncing {projectsCount} projects.", projects.Count);
-
-        foreach (var project in projects)
-        {
-            await SyncProject(dbContext, project);
-
-            if (stoppingToken.IsCancellationRequested) return;
-        }
-    }
-
-    private async Task SyncProject(ApplicationDbContext dbContext, ProjectEntity project)
+    public async Task SyncProject(ProjectEntity project)
     {
         _logger.LogInformation("Syncing project {projectName}.", project.DevOpsProjectName);
 
         var workItemRevisionsDto = await _devOpsClient.GetWorkItemRevisions(project.DevOpsProjectName, project.DevOpsContinuationToken)
 ;
 
-        await ProcessWorkItemRevisions(dbContext, project, workItemRevisionsDto);
+        await ProcessWorkItemRevisions(_dbContext, project, workItemRevisionsDto);
 
         _logger.LogInformation("Successfully synced project {projectName}.", project.DevOpsProjectName);
 
         if (!workItemRevisionsDto.isLastBatch)
         {
-            await SyncProject(dbContext, project);
+            await SyncProject(project);
         }
     }
 

@@ -1,7 +1,5 @@
 using Estimatey.Application;
 using Estimatey.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
