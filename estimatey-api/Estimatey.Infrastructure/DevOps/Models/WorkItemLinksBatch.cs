@@ -1,6 +1,6 @@
 ﻿namespace Estimatey.Infrastructure.DevOps.Models;
 
-internal record WorkItemLinksDto
+internal record WorkItemLinksBatch
 {
     public List<WorkItemLink> Values { get; init; } = new();
 
