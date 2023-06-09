@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Estimatey.Infrastructure;
+
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeService, DateTimeService>();
 
         services.AddHostedService<DevOpsWorkItemSynchronizer>();
+        services.AddHttpClient<DevOpsClient>();
 
         services.AddOptions<DevOpsOptions>()
             .Bind(configuration.GetSection("DevOpsOptions"))

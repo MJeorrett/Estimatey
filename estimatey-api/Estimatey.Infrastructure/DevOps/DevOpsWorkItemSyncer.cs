@@ -1,17 +1,10 @@
-﻿using Azure.Core;
-using Azure.Identity;
-using Estimatey.Core.Entities;
+﻿using Estimatey.Core.Entities;
 using Estimatey.Infrastructure.DevOps.Models;
 using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.Services.Client;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Estimatey.Infrastructure.DevOps;
@@ -22,24 +15,16 @@ internal class DevOpsWorkItemSynchronizer : BackgroundService
 
     private readonly IServiceProvider _services;
     private readonly ILogger _logger;
-
-    private readonly string _azureAadtenantId;
-    private readonly string _clientId;
-    private readonly string _clientSecret;
-    private readonly string _organizationName;
+    private readonly DevOpsClient _devOpsClient;
 
     public DevOpsWorkItemSynchronizer(
         IServiceProvider services,
         ILogger<DevOpsWorkItemSynchronizer> logger,
-        IOptions<DevOpsOptions> options)
+        DevOpsClient devOpsClient)
     {
         _services = services;
         _logger = logger;
-
-        _organizationName = options.Value.OrganizationName;
-        _azureAadtenantId = options.Value.AzureAadTenantId;
-        _clientId = options.Value.ClientId;
-        _clientSecret = options.Value.ClientSecret;
+        _devOpsClient = devOpsClient;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -67,42 +52,20 @@ internal class DevOpsWorkItemSynchronizer : BackgroundService
 
         _logger.LogInformation("Syncing {projectsCount} projects.", projects.Count);
 
-        var credential = new ClientSecretCredential(_azureAadtenantId, _clientId, _clientSecret);
-        var tokenRequestContext = new TokenRequestContext(VssAadSettings.DefaultScopes);
-        var accessToken = await credential.GetTokenAsync(tokenRequestContext, CancellationToken.None);
-
-        var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
-
         foreach (var project in projects)
         {
-            await SyncProject(httpClient, dbContext, project);
+            await SyncProject(dbContext, project);
 
             if (stoppingToken.IsCancellationRequested) return;
         }
     }
 
-    private async Task SyncProject(HttpClient httpClient, ApplicationDbContext dbContext, ProjectEntity project)
+    private async Task SyncProject(ApplicationDbContext dbContext, ProjectEntity project)
     {
         _logger.LogInformation("Syncing project {projectName}.", project.DevOpsProjectName);
 
-        string uri = BuildGetWorkItemRevisionsUri(project);
-
-        var workItemRevisionsResponse = await httpClient.GetAsync(uri);
-
-        _logger.LogDebug("Received work item revisions response from DevOps for project {projectName}:\n{response}", await workItemRevisionsResponse.Content.ReadAsStringAsync(), project.DevOpsProjectName);
-
-        if (workItemRevisionsResponse.StatusCode != HttpStatusCode.OK)
-        {
-            _logger.LogWarning("Fetching work item revisions from DevOps returned unexpected status code {statusCode} and body {responseBody} when syncing project {projectName}.", workItemRevisionsResponse.StatusCode, await workItemRevisionsResponse.Content.ReadAsStringAsync(), project.DevOpsProjectName);
-
-            return;
-        }
-
-        var workItemRevisionsDto = await workItemRevisionsResponse.Content.ReadFromJsonAsync<WorkItemRevisionsDto>() ??
-            throw new Exception("Failed to parse response from get work item revisions response.");
-
-        _logger.LogInformation("Received {numberOfWorkItemRevisions} work item revisions from DevOps for project {projectName}.", workItemRevisionsDto.Values.Count, project.DevOpsProjectName);
+        var workItemRevisionsDto = await _devOpsClient.GetWorkItemRevisions(project.DevOpsProjectName, project.DevOpsContinuationToken)
+;
 
         await ProcessWorkItemRevisions(dbContext, project, workItemRevisionsDto);
 
@@ -110,23 +73,8 @@ internal class DevOpsWorkItemSynchronizer : BackgroundService
 
         if (!workItemRevisionsDto.isLastBatch)
         {
-            await SyncProject(httpClient, dbContext, project);
+            await SyncProject(dbContext, project);
         }
-    }
-
-    private string BuildGetWorkItemRevisionsUri(ProjectEntity project)
-    {
-        var projectName = project.DevOpsProjectName;
-        var continuationToken = project.DevOpsContinuationToken;
-
-        var uri = $"https://dev.azure.com/{_organizationName}/{projectName}/_apis/wit/reporting/workitemrevisions?api-version=4.1";
-
-        if (!string.IsNullOrWhiteSpace(continuationToken))
-        {
-            uri += $"&continuationToken={continuationToken}";
-        }
-
-        return uri;
     }
 
     private async Task ProcessWorkItemRevisions(
