@@ -35,7 +35,7 @@ internal class DevOpsClient
         _clientSecret = options.Value.ClientSecret;
     }
 
-    public async Task<WorkItemRevisionsDto> GetWorkItemRevisionsBatch(string projectName, string? continuationToken)
+    public async Task<WorkItemRevisionsBatch> GetWorkItemRevisionsBatch(string projectName, string? continuationToken)
     {
         _logger.LogInformation("Fetching work item revisions for project {projectName} with continuation token {continuationToken}.", projectName, continuationToken);
 
@@ -53,15 +53,15 @@ internal class DevOpsClient
             throw new Exception($"Failed to fetch work item revisions from uri {uri}.");
         }
 
-        var workItemRevisionsDto = await response.Content.ReadFromJsonAsync<WorkItemRevisionsDto>() ??
+        var workItemRevisionsBatch = await response.Content.ReadFromJsonAsync<WorkItemRevisionsBatch>() ??
             throw new Exception("Failed to parse response from get work item revisions response.");
 
-        _logger.LogInformation("Received {numberOfWorkItemRevisions} work item revisions from DevOps for project {projectName}.", workItemRevisionsDto.Values.Count, projectName);
+        _logger.LogInformation("Received {numberOfWorkItemRevisions} work item revisions from DevOps for project {projectName}.", workItemRevisionsBatch.Values.Count, projectName);
 
-        return workItemRevisionsDto;
+        return workItemRevisionsBatch;
     }
 
-    public async Task<WorkItemLinksDto> GetWorkItemLinksBatch(string projectName, string? continuationToken)
+    public async Task<WorkItemLinksBatch> GetWorkItemLinksBatch(string projectName, string? continuationToken)
     {
         _logger.LogInformation("Fetching work item links for project {projectName} with continuation token {continuationToken}.", projectName, continuationToken);
 
@@ -79,12 +79,38 @@ internal class DevOpsClient
             throw new Exception($"Failed to fetch work item links from uri {uri}.");
         }
 
-        var workItemlinksDto = await response.Content.ReadFromJsonAsync<WorkItemLinksDto>() ??
+        var workItemLinksBatch = await response.Content.ReadFromJsonAsync<WorkItemLinksBatch>() ??
             throw new Exception("Failed to parse response from get work item links response.");
 
-        _logger.LogInformation("Received {numberOfWorkItemLinks} work item links from DevOps for project {projectName}.", workItemlinksDto.Values.Count, projectName);
+        _logger.LogInformation("Received {numberOfWorkItemLinks} work item links from DevOps for project {projectName}.", workItemLinksBatch.Values.Count, projectName);
 
-        return workItemlinksDto;
+        return workItemLinksBatch;
+    }
+
+    public async Task<List<WorkItemShallowReference>> GetRecycleBinWorkItems(string projectName)
+    {
+        _logger.LogInformation("Fetching work item links for project {projectName}.", projectName);
+
+        string uri = BuildGetRecycleBinWorkItemReferencesUri(projectName);
+        await EnsureAccessTokenSet();
+
+        var response = await _httpClient.GetAsync(uri);
+
+        _logger.LogDebug("Received recycle bin work items response from DevOps for project {projectName}:\n{response}", await response.Content.ReadAsStringAsync(), projectName);
+
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            _logger.LogWarning("Fetching recycle bin work items from DevOps returned unexpected status code {statusCode} and body {responseBody} when syncing project {projectName}.", response.StatusCode, await response.Content.ReadAsStringAsync(), projectName);
+
+            throw new Exception($"Failed to fetch recycle bin work items from uri {uri}.");
+        }
+
+        var recycleBinWorkItems = await response.Content.ReadFromJsonAsync<RecycleBinWorkItems>() ??
+            throw new Exception("Failed to parse response from get recycle bin work items response.");
+
+        _logger.LogInformation("Received {numberOfWorkItemInRecycleBin} recycle bin work items from DevOps for project {projectName}.", recycleBinWorkItems.Count, projectName);
+
+        return recycleBinWorkItems.Value;
     }
 
     private async Task EnsureAccessTokenSet()
@@ -120,5 +146,10 @@ internal class DevOpsClient
         }
 
         return uri;
+    }
+
+    private string BuildGetRecycleBinWorkItemReferencesUri(string projectName)
+    {
+        return $"https://dev.azure.com/{_organizationName}/{projectName}/_apis/wit/recyclebin?api-version=7.0";
     }
 }

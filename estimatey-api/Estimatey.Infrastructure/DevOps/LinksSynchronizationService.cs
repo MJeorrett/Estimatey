@@ -28,19 +28,19 @@ internal class LinksSynchronizationService
     {
         _logger.LogInformation("Syncing links for project {projectName}.", project.DevOpsProjectName);
 
-        var workItemLinksDto = await _devOpsClient.GetWorkItemLinksBatch(project.DevOpsProjectName, project.LinksContinuationToken)
+        var workItemLinksBatch = await _devOpsClient.GetWorkItemLinksBatch(project.DevOpsProjectName, project.LinksContinuationToken)
 ;
-        await ProcessWorkItemLinks(project, workItemLinksDto);
+        await ProcessWorkItemLinks(project, workItemLinksBatch);
 
         _logger.LogInformation("Successfully synced links for project {projectName}.", project.DevOpsProjectName);
 
-        if (!workItemLinksDto.IsLastBatch)
+        if (!workItemLinksBatch.IsLastBatch)
         {
             await SyncProject(project);
         }
     }
 
-    private async Task ProcessWorkItemLinks(ProjectEntity project, WorkItemLinksDto workItemLinksDto)
+    private async Task ProcessWorkItemLinks(ProjectEntity project, WorkItemLinksBatch workItemLinksBatch)
     {
         var features = await _dbContext.Features
             .Include(_ => _.UserStories)
@@ -53,7 +53,7 @@ internal class LinksSynchronizationService
         var tickets = await _dbContext.Tickets
             .ToListAsync();
 
-        foreach (var workItemLink in workItemLinksDto.Values)
+        foreach (var workItemLink in workItemLinksBatch.Values)
         {
             if (workItemLink.LinkType != "System.LinkTypes.Hierarchy-Forward") continue;
 
@@ -127,9 +127,9 @@ internal class LinksSynchronizationService
             }
         }
 
-        _logger.LogInformation("Setting continuation token for project {projectName} to '{continuationToken}'.", project.DevOpsProjectName, workItemLinksDto.ContinuationToken);
+        _logger.LogInformation("Setting continuation token for project {projectName} to '{continuationToken}'.", project.DevOpsProjectName, workItemLinksBatch.ContinuationToken);
 
-        project.LinksContinuationToken = workItemLinksDto.ContinuationToken;
+        project.LinksContinuationToken = workItemLinksBatch.ContinuationToken;
 
         await _dbContext.SaveChangesAsync();
     }

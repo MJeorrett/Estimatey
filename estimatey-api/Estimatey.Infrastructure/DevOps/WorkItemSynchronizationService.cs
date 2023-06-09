@@ -3,6 +3,7 @@ using Estimatey.Infrastructure.DevOps.Models;
 using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using System.Text.Json;
 
 namespace Estimatey.Infrastructure.DevOps;
@@ -29,13 +30,17 @@ internal class WorkItemSynchronizationService
     {
         _logger.LogInformation("Syncing work items for project {projectName}.", project.DevOpsProjectName);
 
-        var workItemRevisionsDto = await _devOpsClient.GetWorkItemRevisionsBatch(project.DevOpsProjectName, project.WorkItemsContinuationToken);
+        var workItemRevisionsBatch = await _devOpsClient.GetWorkItemRevisionsBatch(project.DevOpsProjectName, project.WorkItemsContinuationToken);
 
-        await ProcessWorkItemRevisions(project, workItemRevisionsDto);
+        await ProcessWorkItemRevisions(project, workItemRevisionsBatch);
+
+        var recycleBinWorkItems = await _devOpsClient.GetRecycleBinWorkItems(project.DevOpsProjectName);
+
+        await ProcessRecycleBinWorkItems(recycleBinWorkItems);
 
         _logger.LogInformation("Successfully synced work items for project {projectName}.", project.DevOpsProjectName);
 
-        if (!workItemRevisionsDto.IsLastBatch)
+        if (!workItemRevisionsBatch.IsLastBatch)
         {
             await SyncProject(project);
         }
@@ -43,9 +48,9 @@ internal class WorkItemSynchronizationService
 
     private async Task ProcessWorkItemRevisions(
         ProjectEntity project,
-        WorkItemRevisionsDto workItemRevisionsDto)
+        WorkItemRevisionsBatch workItemRevisionsBatch)
     {
-        var allTagNames = workItemRevisionsDto.Values
+        var allTagNames = workItemRevisionsBatch.Values
             .SelectMany(_ => _.Tags)
             .ToList();
 
@@ -53,7 +58,7 @@ internal class WorkItemSynchronizationService
 
         await UpsertTags(allTagNames);
 
-        var workItemRevisions = workItemRevisionsDto.Values
+        var workItemRevisions = workItemRevisionsBatch.Values
             .GroupBy(_ => _.Id)
             .Select(_ => _.OrderByDescending(_ => _.Rev).First())
             .ToList();
@@ -105,9 +110,45 @@ internal class WorkItemSynchronizationService
             }
         }
 
-        _logger.LogInformation("Setting continuation token for project {projectName} to '{continuationToken}'.", project.DevOpsProjectName, workItemRevisionsDto.ContinuationToken);
+        _logger.LogInformation("Setting continuation token for project {projectName} to '{continuationToken}'.", project.DevOpsProjectName, workItemRevisionsBatch.ContinuationToken);
 
-        project.WorkItemsContinuationToken = workItemRevisionsDto.ContinuationToken;
+        project.WorkItemsContinuationToken = workItemRevisionsBatch.ContinuationToken;
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    private async Task ProcessRecycleBinWorkItems(List<WorkItemShallowReference> workItems)
+    {
+        var features = await _dbContext.Features.ToListAsync();
+        var userStories = await _dbContext.UserStories.ToListAsync();
+        var tickets = await _dbContext.Tickets.ToListAsync();
+
+        foreach (var workItem in workItems)
+        {
+            var feature = features.FirstOrDefault(_ => _.DevOpsId == workItem.Id);
+
+            if (feature is not null)
+            {
+                feature.IsDeleted = true;
+                continue;
+            }
+
+            var userStory = userStories.FirstOrDefault(_ => _.DevOpsId == workItem.Id);
+
+            if (userStory is not null)
+            {
+                userStory.IsDeleted = true;
+                continue;
+            }
+
+            var ticket = tickets.FirstOrDefault(_ => _.DevOpsId == workItem.Id);
+
+            if (ticket is not null)
+            {
+                ticket.IsDeleted = true;
+                continue;
+            }
+        }
 
         await _dbContext.SaveChangesAsync();
     }
@@ -128,6 +169,7 @@ internal class WorkItemSynchronizationService
             existingWorkItem.Title = workItemRevision.Fields.Title;
             existingWorkItem.State = workItemRevision.Fields.State;
             existingWorkItem.Tags = tagEntities;
+            existingWorkItem.IsDeleted = false;
         }
         else
         {

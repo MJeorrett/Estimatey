@@ -2,7 +2,7 @@
 
 namespace Estimatey.Infrastructure.DevOps.Models;
 
-internal record WorkItemRevisionsDto
+internal record WorkItemRevisionsBatch
 {
     public List<WorkItemRevision> Values { get; init; } = new();
 

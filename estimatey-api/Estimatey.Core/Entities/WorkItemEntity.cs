@@ -11,4 +11,6 @@ public abstract class WorkItemEntity
     public string State { get; set; } = "";
 
     public List<TagEntity> Tags { get; set; } = null!;
+
+    public bool IsDeleted { get; set; }
 }
