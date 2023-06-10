@@ -46,4 +46,10 @@ internal record WorkItemRevisionField
 
     [JsonPropertyName("System.Tags")]
     public string RawTags { get; init; } = "";
+
+    [JsonPropertyName("System.CreatedDate")]
+    public DateTime CreatedDate { get; init; }
+
+    [JsonPropertyName("System.ChangedDate")]
+    public DateTime ChangedDate { get; init; }
 }
