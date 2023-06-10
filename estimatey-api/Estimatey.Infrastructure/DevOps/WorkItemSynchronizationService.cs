@@ -170,6 +170,7 @@ internal class WorkItemSynchronizationService
             existingWorkItem.State = workItemRevision.Fields.State;
             existingWorkItem.Tags = tagEntities;
             existingWorkItem.IsDeleted = false;
+            existingWorkItem.ChangedDate = workItemRevision.Fields.ChangedDate;
         }
         else
         {
@@ -181,6 +182,8 @@ internal class WorkItemSynchronizationService
                 Title = workItemRevision.Fields.Title,
                 State = workItemRevision.Fields.State,
                 Tags = tagEntities,
+                CreatedDate = workItemRevision.Fields.CreatedDate,
+                ChangedDate = workItemRevision.Fields.ChangedDate,
             });
         }
     }

@@ -16,6 +16,8 @@ It does tell use when work items are restored from the recycle bin though!!
 - :white_check_mark: Write service to sync work item relationships from DevOps.
 - :construction: Make deleting more robust by storing last revised date and then only marking deleted if deleted date is after last revised date.
 - Project ticket overview page
+- See if base workItem table would make things easier.
+- See if we can remove DevOpsId and insert id from DevOps into the Id column.
 ![Project ticket overview page](./readme-images/project-ticket-overview-page.png)
 - Write service to sync time sheets from Float.
 - Basic predictions page
