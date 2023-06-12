@@ -5,7 +5,7 @@ import { Project } from "./models/project";
 export const useProjects = () => {
     const { response, isLoading, refetch } =
         useFetch<ApiResponse<Project[]>>(
-            "api/key-deliverables"
+            "api/projects"
         );
 
     return {
