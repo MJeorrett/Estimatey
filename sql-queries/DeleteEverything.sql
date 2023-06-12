@@ -9,4 +9,4 @@ DELETE FROM Feature;
 DELETE FROM Tag;
 
 UPDATE Project
-SET DevOpsContinuationToken = ''
+SET LinksContinuationToken = '', WorkItemsContinuationToken = ''
