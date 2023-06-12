@@ -19,6 +19,7 @@ It does tell use when work items are restored from the recycle bin though!!
 - Write service to sync time sheets from Float.
 - Basic predictions page
 ![Basic predictions page](./readme-images/basic-predictions-page.png)
+- Normalize work item statuses - take whatever DevOps has and convert to "New", "In progress", "Complete". Configurable mappings.
 
 ## Completed features
 - :white_check_mark: Write service to sync work items from DevOps including features, user stories, tasks and their tags.
