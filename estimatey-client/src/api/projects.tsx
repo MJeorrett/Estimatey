@@ -14,3 +14,16 @@ export const useProjects = () => {
         refetch,
     };
 };
+
+export const useProject = (projectId: number) => {
+    const { response, isLoading, refetch } =
+        useFetch<ApiResponse<Project>>(
+            `api/projects/${projectId}`
+        );
+
+    return {
+        project: response?.content,
+        isLoading,
+        refetch,
+    };
+};
