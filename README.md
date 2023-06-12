@@ -14,6 +14,7 @@ It does tell use when work items are restored from the recycle bin though!!
 ## Road Map
 - :construction: Project ticket overview page.
 ![Project ticket overview page](./readme-images/project-ticket-overview-page.png)
+- Last sync / next sync indicator
 - See if base workItem table would make things easier.
 - See if we can remove DevOpsId and insert id from DevOps into the Id column.
 - Write service to sync time sheets from Float.
