@@ -1,3 +1,5 @@
+import { Check, Ticket, Circle } from "@phosphor-icons/react";
+
 import { TicketSummary, ticketState } from "../../api/models/ticket";
 
 type FeatureTicketsProps = {
@@ -7,19 +9,28 @@ type FeatureTicketsProps = {
 const FeatureTickets = ({ tickets }: FeatureTicketsProps) => {
     if (tickets.length === 0) {
         return (
-            <p>Not Refined</p>
+            <div className="grid grid-cols-[1fr_32px] gap-4 items-center">
+                <p className="text-right">Not Refined</p>
+                <span />
+            </div>
         )
     }
 
     if (tickets.every(_ => _.state === ticketState.complete)) {
         return (
-            <p>Complete</p>
+            <div className="grid grid-cols-[1fr_32px] gap-4 items-center">
+                <p className="text-right">Complete</p>
+                <Check size={32} weight="bold" className="text-green-600" />
+            </div>
         )
     }
 
     if (tickets.every(_ => _.state === ticketState.new)) {
         return (
-            <p>{tickets.length} Ticket{tickets.length === 1 ? "" : "s"}</p>
+            <div className="grid grid-cols-[1fr_32px] gap-4 items-center">
+                <p className="text-right">{tickets.length} Ticket{tickets.length === 1 ? "" : "s"}</p>
+                <Ticket size={32} weight="fill" className="text-yellow-500" />
+            </div>
         )
     }
 
@@ -27,7 +38,10 @@ const FeatureTickets = ({ tickets }: FeatureTicketsProps) => {
     const percentageComplete = Math.round((completedTicketCount / tickets.length) * 100);
 
     return (
-        <p>{percentageComplete}% Complete</p>
+        <div className="grid grid-cols-[1fr_32px] gap-4 items-center">
+            <p className="text-right">{percentageComplete}% Complete</p>
+            <Circle size={26} weight="fill" className="text-yellow-500" />
+        </div>
     )
 }
 
