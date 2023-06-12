@@ -29,6 +29,6 @@ public class ListFeaturesQueryHandler : IRequestHandler<ListFeaturesQuery, List<
             .Select(entity => FeatureSummary.MapFromEntity(entity))
             .ToListAsync(cancellationToken);
 
-        return new(200, featureSummaries);
+        return new(200, featureSummaries.OrderBy(_ => _.SortOrder).ToList());
     }
 }

@@ -12,8 +12,6 @@ It does tell use when work items are restored from the recycle bin though!!
 - It keeps the same token for ever so will probably fall over after about 1 hour at the moment...
 
 ## Road Map
-- :construction: Project ticket overview page.
-![Project ticket overview page](./readme-images/project-ticket-overview-page.png)
 - Last sync / next sync indicator
 - See if base workItem table would make things easier.
 - See if we can remove DevOpsId and insert id from DevOps into the Id column.
@@ -26,6 +24,8 @@ It does tell use when work items are restored from the recycle bin though!!
 - :white_check_mark: Write service to sync work items from DevOps including features, user stories, tasks and their tags.
 - :white_check_mark: Write service to sync work item relationships from DevOps.
 - :white_check_mark: Make deleting more robust by storing last revised date and then only marking deleted if deleted date is after last revised date. NOTE: Turns out I don't think we need this as delete runs after update.  Lets see how we go and tweak if necessary.
+- :white_check_mark: Project ticket overview page.
+![Project ticket overview page](./readme-images/project-ticket-overview-page.png)
 
 ## Future Scope
 - Warnings when invalid work item states are found e.g. Tasks or User Stories without a parent

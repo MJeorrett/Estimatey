@@ -10,6 +10,8 @@ public record FeatureSummary
 
     public string State { get; init; } = "";
 
+    public double SortOrder { get; init; }
+
     public List<UserStorySummary> UserStories { get; init; } = new();
 
     public static FeatureSummary MapFromEntity(FeatureEntity entity)
@@ -19,9 +21,25 @@ public record FeatureSummary
             Id = entity.Id,
             Title = entity.Title,
             State = entity.State,
+            SortOrder = CalculateSortOrder(entity),
             UserStories = entity.UserStories
                 .Select(UserStorySummary.MapFromEntity)
                 .ToList(),
-        };
+        };  
+    }
+
+    private static double CalculateSortOrder(FeatureEntity entity)
+    {
+        var allTickets = entity.UserStories.SelectMany(_ => _.Tickets);
+
+        if (allTickets.Count() == 0) return 300;
+
+        if (allTickets.All(_ => _.State == "Closed")) return 0;
+
+        if (allTickets.All(_ => _.State == "New")) return 200;
+
+        var completedTicketCount = allTickets.Count(_ => _.State == "Closed");
+
+        return (double) completedTicketCount / allTickets.Count();
     }
 }
