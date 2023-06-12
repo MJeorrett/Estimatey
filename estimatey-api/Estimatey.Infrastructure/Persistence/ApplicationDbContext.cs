@@ -27,6 +27,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
+        modelBuilder.Entity<FeatureEntity>()
+            .HasQueryFilter(_ => !_.IsDeleted);
+
+        modelBuilder.Entity<UserStoryEntity>()
+            .HasQueryFilter(_ => !_.IsDeleted);
+
+        modelBuilder.Entity<TicketEntity>()
+            .HasQueryFilter(_ => !_.IsDeleted);
+
         base.OnModelCreating(modelBuilder);
     }
 }
