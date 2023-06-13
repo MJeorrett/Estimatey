@@ -34,11 +34,11 @@ public record FeatureSummary
 
         if (allTickets.Count() == 0) return 300;
 
-        if (allTickets.All(_ => _.State == "Closed")) return 0;
+        if (allTickets.All(_ => _.State == TicketEntity.ClosedState)) return 0;
 
-        if (allTickets.All(_ => _.State == "New")) return 200;
+        if (allTickets.All(_ => _.State == TicketEntity.NewState)) return 200;
 
-        var completedTicketCount = allTickets.Count(_ => _.State == "Closed");
+        var completedTicketCount = allTickets.Count(_ => _.State == TicketEntity.ClosedState);
 
         return (double) completedTicketCount / allTickets.Count();
     }
