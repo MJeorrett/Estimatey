@@ -24,6 +24,7 @@ public class ListFeaturesQueryHandler : IRequestHandler<ListFeaturesQuery, List<
         CancellationToken cancellationToken)
     {
         var featureSummaries = await _dbContext.Features
+            .Where(_ => _.ProjectId == query.ProjectId)
             .Include(_ => _.UserStories)
                 .ThenInclude(_ => _.Tickets)
             .Select(entity => FeatureSummary.MapFromEntity(entity))
