@@ -6,6 +6,9 @@ public abstract class WorkItemEntity
 
     public int DevOpsId { get; set; }
 
+    public int ProjectId { get; set; }
+    public ProjectEntity Project { get; set; } = null!;
+
     public string Title { get; set; } = "";
 
     public string State { get; set; } = "";

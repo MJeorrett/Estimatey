@@ -3,7 +3,6 @@ using Estimatey.Infrastructure.DevOps.Models;
 using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using System.Text.Json;
 
 namespace Estimatey.Infrastructure.DevOps;
@@ -77,7 +76,7 @@ internal class WorkItemSynchronizationService
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
-                        await UpsertWorkItem(existingFeature, workItemRevision);
+                        await UpsertWorkItem(project.Id, existingFeature, workItemRevision);
 
                         break;
                     }
@@ -90,7 +89,7 @@ internal class WorkItemSynchronizationService
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
-                        await UpsertWorkItem(existingUserStory, workItemRevision);
+                        await UpsertWorkItem(project.Id, existingUserStory, workItemRevision);
 
                         break;
                     }
@@ -103,7 +102,7 @@ internal class WorkItemSynchronizationService
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
-                        await UpsertWorkItem(existingUserStory, workItemRevision);
+                        await UpsertWorkItem(project.Id, existingUserStory, workItemRevision);
 
                         break;
                     }
@@ -154,6 +153,7 @@ internal class WorkItemSynchronizationService
     }
 
     private async Task UpsertWorkItem<T>(
+        int projectId,
         T? existingWorkItem,
         WorkItemRevision workItemRevision)
         where T: WorkItemEntity, new()
@@ -178,6 +178,7 @@ internal class WorkItemSynchronizationService
 
             _dbContext.Add(new T()
             {
+                ProjectId = projectId,
                 DevOpsId = workItemRevision.Id,
                 Title = workItemRevision.Fields.Title,
                 State = workItemRevision.Fields.State,
