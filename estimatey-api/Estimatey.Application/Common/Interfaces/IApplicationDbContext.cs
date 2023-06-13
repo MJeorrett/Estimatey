@@ -5,15 +5,17 @@ namespace Estimatey.Application.Common.Interfaces;
 
 public interface IApplicationDbContext
 {
-    public DbSet<ProjectEntity> Projects { get; }
+    DbSet<ProjectEntity> Projects { get; }
 
-    public DbSet<FeatureEntity> Features { get; }
+    DbSet<FeatureEntity> Features { get; }
 
-    public DbSet<UserStoryEntity> UserStories { get; }
+    DbSet<UserStoryEntity> UserStories { get; }
 
-    public DbSet<TicketEntity> Tickets { get; }
+    DbSet<TicketEntity> Tickets { get; }
 
-    public DbSet<TagEntity> Tags { get; }
+    DbSet<TagEntity> Tags { get; }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+    DbSet<FloatPersonEntity> FloatPeople { get; }
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

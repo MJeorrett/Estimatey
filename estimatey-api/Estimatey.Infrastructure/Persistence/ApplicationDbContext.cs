@@ -17,6 +17,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public DbSet<TagEntity> Tags { get; init; }
 
+    public DbSet<FloatPersonEntity> FloatPeople { get; init; }
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {

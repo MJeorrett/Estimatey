@@ -1,6 +1,7 @@
 using Estimatey.Application.Common.Interfaces;
 using Estimatey.Infrastructure.DateTimes;
 using Estimatey.Infrastructure.DevOps;
+using Estimatey.Infrastructure.Float;
 using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,9 +21,16 @@ public static class DependencyInjection
 
         services.AddHostedService<ProjectsSynchronizationService>();
         services.AddHttpClient<DevOpsClient>();
+        services.AddHttpClient<FloatClient>();
+
+        services.AddScoped<IFloatClient>(provider => provider.GetRequiredService<FloatClient>());
 
         services.AddOptions<DevOpsOptions>()
             .Bind(configuration.GetSection("DevOpsOptions"))
+            .ValidateOnStart();
+        
+        services.AddOptions<FloatOptions>()
+            .Bind(configuration.GetSection("FloatOptions"))
             .ValidateOnStart();
 
         return services;
