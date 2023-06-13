@@ -6,19 +6,25 @@ Estimatey hooks into the tools that you already use** and provides insights that
 ** provided that they are [Azure DevOps](https://azure.microsoft.com/en-gb/products/devops) and [Float](https://www.float.com/time-tracking/) :stuck_out_tongue_closed_eyes:
 
 ## Limitations
-- When work items are deleted in DevOps this is not reflected in the Estimatey work item cache.
-This is because the work item revisions (annoyingly) doesn't tell us when work items are deleted.
-It does tell use when work items are restored from the recycle bin though!!
-- It keeps the same token for ever so will probably fall over after about 1 hour at the moment...
+- Azure DevOps syncing service keeps the same token for ever so will probably fall over after about 1 hour at the moment...
 
 ## Road Map
+- :construction: Write service to sync logged time from Float.
+    - :construction: Basic implementation fetch all every time.
+    - Persist historic data - after say a month we can assume that logged time won't change or maybe we can read the `locked` parameter.  We need to do this so we aren't fetching an every growing list of time logs and / or hit the 200 per page limit which means we would have to do paginated fetching. Will also need to support syncing historic data for a newly hooked up project with lots of logged time - this could be tricky...
 - Last sync / next sync indicator
 - See if base workItem table would make things easier.
 - See if we can remove DevOpsId and insert id from DevOps into the Id column.
-- Write service to sync time sheets from Float.
 - Basic predictions page
 ![Basic predictions page](./readme-images/basic-predictions-page.png)
 - Normalize work item statuses - take whatever DevOps has and convert to "New", "In progress", "Complete". Configurable mappings.
+- Data quality warnings
+    - If parent is complete but children aren't.
+    - Ticket in progress but no user assigned.
+    - Ticket as been in progress for too long.
+- PR analytics
+    - mean time to complete PRs.
+    - Warning when PR open for too long.
 
 ## Completed features
 - :white_check_mark: Write service to sync work items from DevOps including features, user stories, tasks and their tags.

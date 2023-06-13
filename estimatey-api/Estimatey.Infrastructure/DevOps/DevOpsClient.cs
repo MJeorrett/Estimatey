@@ -7,7 +7,6 @@ using System.Net;
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.VisualStudio.Services.Client;
-using System;
 
 internal class DevOpsClient
 {
