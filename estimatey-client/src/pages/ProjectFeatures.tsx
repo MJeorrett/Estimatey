@@ -3,6 +3,7 @@ import { useProject } from "../api/projects"
 import { useProjectId } from "../appPaths"
 import FeaturesList from "../components/FeaturesList/FeaturesList";
 import Loader from "../components/Loader";
+import PageTitle from "../components/PageTitle";
 
 const ProjectFeatures = () => {
     const projectId = useProjectId();
@@ -13,7 +14,7 @@ const ProjectFeatures = () => {
 
     return (
         <div className="p-8">
-            <h1 className="text-5xl text-center mb-10 underline">{project.title} Features</h1>
+            <PageTitle>{project.title} Features</PageTitle>
             <FeaturesList features={features} />
         </div>
     )
