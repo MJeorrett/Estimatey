@@ -10,7 +10,7 @@ public record ListFeaturesQuery
     public int ProjectId { get; init; }
 }
 
-public class ListFeaturesQueryHandler : IRequestHandler<ListFeaturesQuery, List<FeatureSummary>>
+public class ListFeaturesQueryHandler : IRequestHandler<ListFeaturesQuery, List<FeatureSummaryDto>>
 {
     private readonly IApplicationDbContext _dbContext;
 
@@ -19,7 +19,7 @@ public class ListFeaturesQueryHandler : IRequestHandler<ListFeaturesQuery, List<
         _dbContext = dbContext;
     }
 
-    public async Task<AppResponse<List<FeatureSummary>>> Handle(
+    public async Task<AppResponse<List<FeatureSummaryDto>>> Handle(
         ListFeaturesQuery query,
         CancellationToken cancellationToken)
     {
@@ -27,7 +27,7 @@ public class ListFeaturesQueryHandler : IRequestHandler<ListFeaturesQuery, List<
             .Where(_ => _.ProjectId == query.ProjectId)
             .Include(_ => _.UserStories)
                 .ThenInclude(_ => _.Tickets)
-            .Select(entity => FeatureSummary.MapFromEntity(entity))
+            .Select(entity => FeatureSummaryDto.MapFromEntity(entity))
             .ToListAsync(cancellationToken);
 
         return new(200, featureSummaries.OrderBy(_ => _.SortOrder).ToList());
