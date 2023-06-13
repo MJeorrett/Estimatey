@@ -9,7 +9,7 @@ const HomePage = () => {
         <div className="p-8">
             <h1 className="text-5xl">Features</h1>
             {projects.map(project => (
-                <Link to={appPaths.projectFeatures(project.id)}>
+                <Link key={project.id} to={appPaths.projectFeatures(project.id)}>
                     <span>{project.title}</span>
                 </Link>
             ))}
