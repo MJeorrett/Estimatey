@@ -2,7 +2,7 @@
 
 namespace Estimatey.Application.WorkItems.Dtos;
 
-public record TicketSummary
+public record UserStorySummaryDto
 {
     public int Id { get; init; }
 
@@ -10,13 +10,18 @@ public record TicketSummary
 
     public string State { get; init; } = "";
 
-    public static TicketSummary MapFromEntity(TicketEntity entity)
+    public List<TicketSummaryDto> Tickets { get; init; } = new();
+
+    public static UserStorySummaryDto MapFromEntity(UserStoryEntity entity)
     {
         return new()
         {
             Id = entity.Id,
             Title = entity.Title,
             State = entity.State,
+            Tickets = entity.Tickets
+                .Select(TicketSummaryDto.MapFromEntity)
+                .ToList(),
         };
     }
 }

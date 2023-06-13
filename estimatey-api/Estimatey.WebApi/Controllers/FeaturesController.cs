@@ -10,7 +10,7 @@ namespace Estimatey.WebApi.Controllers;
 public class FeaturesController : ControllerBase
 {
     [HttpGet("api/projects/{projectId}/features")]
-    public async Task<ActionResult<AppResponse<List<FeatureSummary>>>> ListFeatures(
+    public async Task<ActionResult<AppResponse<List<FeatureSummaryDto>>>> ListFeatures(
         [FromRoute] int projectId,
         [FromServices] ListFeaturesQueryHandler handler,
         CancellationToken cancellationToken)

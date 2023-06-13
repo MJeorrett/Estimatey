@@ -2,7 +2,7 @@
 
 namespace Estimatey.Application.WorkItems.Dtos;
 
-public record FeatureSummary
+public record FeatureSummaryDto
 {
     public int Id { get; init; }
 
@@ -12,9 +12,9 @@ public record FeatureSummary
 
     public double SortOrder { get; init; }
 
-    public List<UserStorySummary> UserStories { get; init; } = new();
+    public List<UserStorySummaryDto> UserStories { get; init; } = new();
 
-    public static FeatureSummary MapFromEntity(FeatureEntity entity)
+    public static FeatureSummaryDto MapFromEntity(FeatureEntity entity)
     {
         return new()
         {
@@ -23,7 +23,7 @@ public record FeatureSummary
             State = entity.State,
             SortOrder = CalculateSortOrder(entity),
             UserStories = entity.UserStories
-                .Select(UserStorySummary.MapFromEntity)
+                .Select(UserStorySummaryDto.MapFromEntity)
                 .ToList(),
         };  
     }
