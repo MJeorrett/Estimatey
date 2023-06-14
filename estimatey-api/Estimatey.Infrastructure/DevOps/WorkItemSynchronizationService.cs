@@ -73,6 +73,7 @@ internal class WorkItemSynchronizationService
                         _logger.LogDebug("Upserting Feature {id}.", workItemRevision.Id);
 
                         var existingFeature = await _dbContext.Features
+                            .IgnoreQueryFilters()
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
@@ -86,6 +87,7 @@ internal class WorkItemSynchronizationService
                         _logger.LogDebug("Upserting User Story {id}.", workItemRevision.Id);
 
                         var existingUserStory = await _dbContext.UserStories
+                            .IgnoreQueryFilters()
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
@@ -98,11 +100,12 @@ internal class WorkItemSynchronizationService
                     {
                         _logger.LogDebug("Upserting Ticket {id}.", workItemRevision.Id);
 
-                        var existingUserStory = await _dbContext.Tickets
+                        var existingTicket = await _dbContext.Tickets
+                            .IgnoreQueryFilters()
                             .Include(_ => _.Tags)
                             .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
 
-                        await UpsertWorkItem(project.Id, existingUserStory, workItemRevision);
+                        await UpsertWorkItem(project.Id, existingTicket, workItemRevision);
 
                         break;
                     }
