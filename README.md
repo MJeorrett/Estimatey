@@ -22,6 +22,8 @@ Estimatey hooks into the tools that you already use** and provides insights that
     - If parent is complete but children aren't.
     - Ticket in progress but no user assigned.
     - Ticket as been in progress for too long.
+    - Ticket or User Story doesn't have a feature.
+    - User not specified as Developer, Designer etc.
 - PR analytics
     - mean time to complete PRs.
     - Warning when PR open for too long.

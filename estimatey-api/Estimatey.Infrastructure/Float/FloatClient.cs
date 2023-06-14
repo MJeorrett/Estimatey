@@ -29,7 +29,32 @@ public class FloatClient : IFloatClient
 
     public async Task<List<LoggedTimeDto>> GetLoggedTime(int projectId)
     {
-        var uri = $"{_apiBaseUrl}/logged-time?project_id={projectId}&per-page=200";
+        var results = new List<LoggedTimeDto>();
+        var currentPage = 1;
+        var hasNextPage = true;
+
+        while (hasNextPage)
+        {
+            if (currentPage > 1)
+            {
+                // To try and avoid hitting Float API 10 requests per second rate limit.
+                Thread.Sleep(200);
+            }
+
+            var (resultsPage, _hasNextPage) = await GetLoggedTimePage(projectId, currentPage);
+            currentPage++;
+
+            results.AddRange(resultsPage);
+
+            hasNextPage = _hasNextPage;
+        }
+
+        return results;
+    }
+
+    private async Task<(List<LoggedTimeDto>, bool)> GetLoggedTimePage(int projectId, int pageNumber)
+    {
+        var uri = $"{_apiBaseUrl}/logged-time?project_id={projectId}&page={pageNumber}&per-page=200";
 
         var response = await _httpClient.GetAsync(uri);
 
@@ -47,13 +72,11 @@ public class FloatClient : IFloatClient
             throw new Exception("Failed to parse logged time from response from Float.");
         }
 
-        if (loggedTime.Count >= 200)
-        {
-            // Will have to handle multiple pages in future / cache the historic logged time but lets just get something simple up for now.
-            _logger.LogWarning("Probably missing logged time data as the returned page is full.");
-        }
+        var endOfCurrentPage = pageNumber * 200;
+        var totalCountHeader = response.Headers.First(_ => _.Key == "X-Pagination-Total-Count");
+        var totalCount = int.Parse(totalCountHeader.Value.First());
 
-        return loggedTime;
+        return (loggedTime, totalCount > endOfCurrentPage);
     }
 
     public async Task<List<FloatPersonDto>> GetPeople()
