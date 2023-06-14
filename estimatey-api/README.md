@@ -17,6 +17,16 @@ Then you need to configure your user secrets in the WebApi project as follows:
 }
 ```
 
+Optionally you can specify Float people to ignore e.g. if you only want to account for developers. This is done by adding the following to your user secrets:
+```JSON
+{
+  "FloatOptions:PeopleToIgnore": [
+	"<float person id 1>"
+	...
+  ]
+}
+```
+
 Then you need to migrate the database by running the following command in the estimatey-api folder:
 ```
 dotnet ef database update --project .\Estimatey.Infrastructure\ --startup-project .\Estimatey.WebApi\
