@@ -1,10 +1,12 @@
 ﻿using Estimatey.Application.Common.AppRequests;
+using Estimatey.Application.Common.Configuration;
 using Estimatey.Application.Common.Interfaces;
 using Estimatey.Application.Common.Models;
 using Estimatey.Application.DeveloperTime.Dtos;
 using Estimatey.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Estimatey.Application.DeveloperTime.Queries.ListLoggedTimeByDeveloper;
 
@@ -18,17 +20,21 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
     private readonly IFloatClient _floatClient;
     private readonly IApplicationDbContext _dbContext;
     private readonly ILogger _logger;
+    private readonly List<int> _excludedFloatPersonIds;
 
     private static SemaphoreSlim _syncPeopleSemaphore = new SemaphoreSlim(1, 1);
 
     public ListLoggedTimeByDeveloperQueryHandler(
         IFloatClient floatClient,
         IApplicationDbContext dbContext,
-        ILogger<ListLoggedTimeByDeveloperQueryHandler> logger)
+        ILogger<ListLoggedTimeByDeveloperQueryHandler> logger,
+        IOptions<GlobalOptions> options)
     {
         _floatClient = floatClient;
         _dbContext = dbContext;
         _logger = logger;
+
+        _excludedFloatPersonIds = options.Value.ExcludedFloatPersonIds;
     }
 
     public async Task<AppResponse<List<DeveloperLoggedTime>>> Handle(
@@ -42,13 +48,24 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
             return new(404, null, $"No project exists with id {query.ProjectId}.");
         }
 
-        var allLoggedTime = await _floatClient.GetLoggedTime(project.FloatId);
-        var personIds = allLoggedTime.Select(_ => _.PersonId).Distinct().ToList();
+        var loggedDeveloperTime = await GetLoggedDeveloperTime(project);
+
+        var personIds = loggedDeveloperTime.Select(_ => _.PersonId).Distinct().ToList();
         var people = await GetPeople(personIds, cancellationToken);
 
-        var developerLoggedTime = DeveloperLoggedTime.MapFromLoggedTime(allLoggedTime, people);
+        var developerLoggedTime = DeveloperLoggedTime.MapFromLoggedTime(loggedDeveloperTime, people);
 
         return new(200, developerLoggedTime);
+    }
+
+    private async Task<List<LoggedTimeDto>> GetLoggedDeveloperTime(ProjectEntity project)
+    {
+        var allLoggedTime = await _floatClient.GetLoggedTime(project.FloatId);
+
+        return allLoggedTime
+            .Where(loggedTime =>
+                !_excludedFloatPersonIds.Contains(loggedTime.PersonId))
+            .ToList();
     }
 
     private async Task<List<FloatPersonEntity>> GetPeople(List<int> personIds, CancellationToken cancellationToken)

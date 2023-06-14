@@ -19,7 +19,7 @@ public static class DependencyInjection
         services.AddScoped<WorkItemSynchronizationService>();
         services.AddScoped<LinksSynchronizationService>();
 
-        services.AddHostedService<ProjectsSynchronizationService>();
+        //services.AddHostedService<ProjectsSynchronizationService>();
         services.AddHttpClient<DevOpsClient>();
         services.AddHttpClient<FloatClient>();
 
