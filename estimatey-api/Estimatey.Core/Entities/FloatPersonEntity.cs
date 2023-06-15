@@ -7,4 +7,6 @@ public class FloatPersonEntity
     public int FloatId { get; set; }
 
     public string Name { get; set; } = "";
+
+    public List<LoggedTimeEntity> LoggedTime { get; set; } = null!;
 }

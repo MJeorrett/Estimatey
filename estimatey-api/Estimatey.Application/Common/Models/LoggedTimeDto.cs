@@ -4,6 +4,9 @@ namespace Estimatey.Application.Common.Models;
 
 public record LoggedTimeDto
 {
+    [JsonPropertyName("logged_time_id")]
+    public string Id { get; set; } = "";
+
     [JsonPropertyName("people_id")]
     public int PersonId { get; init; }
 
@@ -14,5 +17,5 @@ public record LoggedTimeDto
     public bool Locked { get; init; }
 
     [JsonPropertyName("locked_date")]
-    public string LockedDate { get; init; } = "";
+    public string? LockedDate { get; init; }
 }

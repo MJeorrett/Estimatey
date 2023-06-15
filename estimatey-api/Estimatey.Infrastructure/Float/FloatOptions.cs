@@ -9,4 +9,7 @@ public record FloatOptions
 
     [Required]
     public string ApiBaseUri { get; init; } = null!;
+
+    [Required]
+    public int PersistLoggedTimeBeforeDaysAgo { get; init; }
 }
