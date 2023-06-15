@@ -119,6 +119,7 @@ internal class DevOpsClient
         var credential = new ClientSecretCredential(_azureAadtenantId, _clientId, _clientSecret);
         var tokenRequestContext = new TokenRequestContext(VssAadSettings.DefaultScopes);
         var accessToken = await credential.GetTokenAsync(tokenRequestContext, CancellationToken.None);
+        _accessToken = accessToken.Token;
 
         _httpClient.DefaultRequestHeaders.Authorization = new("Bearer", accessToken.Token);
     }
