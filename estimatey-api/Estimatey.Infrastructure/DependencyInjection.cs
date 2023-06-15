@@ -3,6 +3,7 @@ using Estimatey.Infrastructure.DateTimes;
 using Estimatey.Infrastructure.DevOps;
 using Estimatey.Infrastructure.Float;
 using Estimatey.Infrastructure.Persistence;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeService, DateTimeService>();
         services.AddScoped<WorkItemSynchronizationService>();
         services.AddScoped<LinksSynchronizationService>();
+        services.AddScoped<FloatHistoricLoggedTimeSyncer>();
 
         //services.AddHostedService<ProjectsSynchronizationService>();
         services.AddHttpClient<DevOpsClient>();
@@ -32,6 +34,11 @@ public static class DependencyInjection
         services.AddOptions<FloatOptions>()
             .Bind(configuration.GetSection("FloatOptions"))
             .ValidateOnStart();
+
+        services.AddHangfire(config =>
+            config.UseSqlServerStorage(configuration.GetConnectionString("SqlServer")));
+
+        services.AddHangfireServer();
 
         return services;
     }

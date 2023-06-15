@@ -27,7 +27,7 @@ public class FloatClient : IFloatClient
         _httpClient.DefaultRequestHeaders.Authorization = new("Bearer", _apiKey);
     }
 
-    public async Task<List<LoggedTimeDto>> GetLoggedTime(int projectId)
+    public async Task<List<LoggedTimeDto>> GetLoggedTime(int projectId, DateOnly? startDate = null, DateOnly? endDate = null)
     {
         var results = new List<LoggedTimeDto>();
         var currentPage = 1;
@@ -41,7 +41,7 @@ public class FloatClient : IFloatClient
                 Thread.Sleep(200);
             }
 
-            var (resultsPage, _hasNextPage) = await GetLoggedTimePage(projectId, currentPage);
+            var (resultsPage, _hasNextPage) = await GetLoggedTimePage(projectId, startDate, endDate, currentPage);
             currentPage++;
 
             results.AddRange(resultsPage);
@@ -52,9 +52,9 @@ public class FloatClient : IFloatClient
         return results;
     }
 
-    private async Task<(List<LoggedTimeDto>, bool)> GetLoggedTimePage(int projectId, int pageNumber)
+    private async Task<(List<LoggedTimeDto>, bool)> GetLoggedTimePage(int projectId, DateOnly? startDate, DateOnly? endDate, int pageNumber)
     {
-        var uri = $"{_apiBaseUrl}/logged-time?project_id={projectId}&page={pageNumber}&per-page=200";
+        var uri = BuildGetLoggedTimePageUri(projectId, startDate, endDate, pageNumber);
 
         var response = await _httpClient.GetAsync(uri);
 
@@ -73,10 +73,34 @@ public class FloatClient : IFloatClient
         }
 
         var endOfCurrentPage = pageNumber * 200;
-        var totalCountHeader = response.Headers.First(_ => _.Key == "X-Pagination-Total-Count");
+        var totalCountHeader = response.Headers.FirstOrDefault(_ => _.Key == "X-Pagination-Total-Count");
+
+        if (totalCountHeader.Value is null || !totalCountHeader.Value.Any())
+        {
+            _logger.LogDebug("No X-Pagination-Total-Count header found.");
+            return (loggedTime, false);
+        }
+
         var totalCount = int.Parse(totalCountHeader.Value.First());
 
         return (loggedTime, totalCount > endOfCurrentPage);
+    }
+
+    private string BuildGetLoggedTimePageUri(int projectId, DateOnly? startDate, DateOnly? endDate, int pageNumber)
+    {
+        var uri = $"{_apiBaseUrl}/logged-time?project_id={projectId}&page={pageNumber}&per-page=200";
+
+        if (startDate is not null)
+        {
+            uri += $"&start_date={startDate:yyyy-MM-dd}";
+        }
+
+        if (endDate is not null)
+        {
+            uri += $"&end_date={endDate:yyyy-MM-dd}";
+        }
+
+        return uri;
     }
 
     public async Task<List<FloatPersonDto>> GetPeople()

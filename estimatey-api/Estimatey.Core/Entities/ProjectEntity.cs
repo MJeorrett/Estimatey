@@ -11,4 +11,6 @@ public class ProjectEntity
     public string? WorkItemsContinuationToken { get; set; }
 
     public string? LinksContinuationToken { get; set; }
+
+    public DateOnly? LoggedTimeHasBeenSyncedUntil { get; set; }
 }
