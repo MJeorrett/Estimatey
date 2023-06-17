@@ -22,8 +22,6 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
     private readonly ILogger _logger;
     private readonly List<int> _excludedFloatPersonIds;
 
-    private static SemaphoreSlim _syncPeopleSemaphore = new SemaphoreSlim(1, 1);
-
     public ListLoggedTimeByDeveloperQueryHandler(
         IFloatClient floatClient,
         IApplicationDbContext dbContext,
@@ -80,46 +78,11 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
         {
             _logger.LogInformation("Found {missingPeopleCount} people in response from Float which don't exist in database so syncing people.", missingPeopleCount);
 
-            await SyncPeopleWithFloat(cancellationToken);
+            await _floatClient.SyncPeople();
         }
 
         return await _dbContext.FloatPeople
             .Where(personEntity => personIds.Contains(personEntity.FloatId))
             .ToListAsync(cancellationToken);
-    }
-
-    private async Task SyncPeopleWithFloat(CancellationToken cancellationToken)
-    {
-        await _syncPeopleSemaphore.WaitAsync();
-
-        try
-        {
-            // Re-fetch inside the lock to make sure we have bang up to date people from db.
-            var existingPeopleFloatIds = await _dbContext.FloatPeople
-                .Select(_ => _.FloatId)
-                .ToListAsync(cancellationToken);
-
-            var peopleFromFloat = await _floatClient.GetPeople();
-
-            foreach (var floatPerson in peopleFromFloat)
-            {
-                if (!existingPeopleFloatIds.Contains(floatPerson.Id))
-                {
-                    _logger.LogInformation("{personName} doesn't exist so adding them.", floatPerson.Name);
-
-                    _dbContext.FloatPeople.Add(new()
-                    {
-                        Name = floatPerson.Name,
-                        FloatId = floatPerson.Id,
-                    });
-                }
-            }
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        finally
-        {
-            _syncPeopleSemaphore.Release();
-        }
     }
 }
