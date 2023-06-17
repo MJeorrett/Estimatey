@@ -1,15 +1,17 @@
 ﻿using Estimatey.Application.Common.Interfaces;
 using Estimatey.Application.Common.Models;
+using Estimatey.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 
 namespace Estimatey.Infrastructure.Float;
 
-public class FloatClient : IFloatClient
+public partial class FloatClient : IFloatClient
 {
     private readonly ILogger _logger;
     private readonly HttpClient _httpClient;
+    private readonly ApplicationDbContext _dbContext;
 
     private readonly string _apiKey;
     private readonly string _apiBaseUrl;
@@ -17,7 +19,8 @@ public class FloatClient : IFloatClient
     public FloatClient(
         ILogger<FloatClient> logger,
         HttpClient httpClient,
-        IOptions<FloatOptions> options)
+        IOptions<FloatOptions> options,
+        ApplicationDbContext dbContext)
     {
         _httpClient = httpClient;
         _logger = logger;
@@ -25,6 +28,7 @@ public class FloatClient : IFloatClient
         _apiBaseUrl = options.Value.ApiBaseUri;
 
         _httpClient.DefaultRequestHeaders.Authorization = new("Bearer", _apiKey);
+        _dbContext = dbContext;
     }
 
     public async Task<List<LoggedTimeDto>> GetLoggedTime(int projectId, DateOnly? startDate = null, DateOnly? endDate = null)
@@ -35,10 +39,10 @@ public class FloatClient : IFloatClient
 
         while (hasNextPage)
         {
-            if (currentPage > 1)
+            if (currentPage > 2)
             {
-                // To try and avoid hitting Float API 10 requests per second rate limit.
-                Thread.Sleep(200);
+                // To help to avoid hitting the Float API 10 requests per second rate limit.
+                Thread.Sleep(1000);
             }
 
             var (resultsPage, _hasNextPage) = await GetLoggedTimePage(projectId, startDate, endDate, currentPage);
@@ -88,9 +92,19 @@ public class FloatClient : IFloatClient
 
     private string BuildGetLoggedTimePageUri(int projectId, DateOnly? startDate, DateOnly? endDate, int pageNumber)
     {
+        if (startDate > endDate)
+        {
+            throw new ArgumentOutOfRangeException($"{nameof(startDate)} must be <= {nameof(endDate)} but {nameof(startDate)}: {startDate} and {nameof(endDate)}: {endDate} were provided.");
+        }
         var uri = $"{_apiBaseUrl}/logged-time?project_id={projectId}&page={pageNumber}&per-page=200";
 
-        if (startDate is not null)
+        if (startDate is null && endDate is not null)
+        {
+            // Float limits the size of date rage you can request and doesn't seem to work if you only specify an end date.
+            // As a work around we set start date to 1 year before end date if it is not provided.
+            uri += $"&start_date={endDate.Value.AddYears(-1).AddDays(1):yyyy-MM-dd}";
+        }
+        else
         {
             uri += $"&start_date={startDate:yyyy-MM-dd}";
         }
@@ -101,36 +115,5 @@ public class FloatClient : IFloatClient
         }
 
         return uri;
-    }
-
-    public async Task<List<FloatPersonDto>> GetPeople()
-    {
-        var uri = $"{_apiBaseUrl}/people?per-page=200";
-
-        var response = await _httpClient.GetAsync(uri);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogInformation("Request to get people from Float failed with status code {statusCode}.", response.StatusCode);
-            throw new Exception($"Request to get people from Float failed with status code {response.StatusCode}.");
-        }
-
-        var people = await response.Content.ReadFromJsonAsync<List<FloatPersonDto>>();
-
-        if (people is null)
-        {
-            _logger.LogWarning("Failed to parse people from response from Float.");
-            throw new Exception("Failed to parse people from response from Float.");
-        }
-
-        if (people.Count >= 200)
-        {
-            // Unlikely to hit this limit for people but should ideally handle multiple pages.
-            _logger.LogWarning("Probably missing people data as the returned page is full.");
-        }
-
-        _logger.LogDebug("Float returned {peopleCount} people.", people.Count);
-
-        return people;
     }
 }

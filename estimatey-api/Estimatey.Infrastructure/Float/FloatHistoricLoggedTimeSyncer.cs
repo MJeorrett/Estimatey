@@ -57,9 +57,10 @@ public class FloatHistoricLoggedTimeSyncer
 
         _logger.LogDebug("Syncing historic logged time for project {projectId} between {startDate} and {endDate}.", project.Id, syncLoggedTimeFrom, syncLoggedTimeUntil);
 
-        if (project.LoggedTimeHasBeenSyncedUntil is not null &&
-            project.LoggedTimeHasBeenSyncedUntil >= syncLoggedTimeUntil)
+        if (syncLoggedTimeFrom is not null &&
+            syncLoggedTimeFrom >= syncLoggedTimeUntil)
         {
+            _logger.LogInformation("Historic logged time is up to date so no need to sync.");
             return;
         }
 

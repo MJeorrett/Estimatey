@@ -13,7 +13,7 @@ internal class DevOpsClient
     private readonly ILogger _logger;
     private readonly HttpClient _httpClient;
 
-    private readonly string _azureAadtenantId;
+    private readonly string _azureAadTenantId;
     private readonly string _clientId;
     private readonly string _clientSecret;
     private readonly string _organizationName;
@@ -29,7 +29,7 @@ internal class DevOpsClient
         _httpClient = httpClient;
 
         _organizationName = options.Value.OrganizationName;
-        _azureAadtenantId = options.Value.AzureAadTenantId;
+        _azureAadTenantId = options.Value.AzureAadTenantId;
         _clientId = options.Value.ClientId;
         _clientSecret = options.Value.ClientSecret;
     }
@@ -116,7 +116,7 @@ internal class DevOpsClient
     {
         if (_accessToken is not null) return;
 
-        var credential = new ClientSecretCredential(_azureAadtenantId, _clientId, _clientSecret);
+        var credential = new ClientSecretCredential(_azureAadTenantId, _clientId, _clientSecret);
         var tokenRequestContext = new TokenRequestContext(VssAadSettings.DefaultScopes);
         var accessToken = await credential.GetTokenAsync(tokenRequestContext, CancellationToken.None);
         _accessToken = accessToken.Token;
