@@ -33,10 +33,10 @@ public class FloatHistoricLoggedTimeSyncer
 
     public async Task SyncHistoricLoggedTime()
     {
+        await _floatClient.SyncPeople();
+
         var projects = await _dbContext.Projects.ToListAsync();
         var people = await _dbContext.FloatPeople.ToListAsync();
-
-        // TODO: sync float people like we do in ListDeveloperLoggedTimeQueryHandler.
 
         _logger.LogInformation("Syncing historic logged time for {projectsCount} projects.", projects.Count);
 
