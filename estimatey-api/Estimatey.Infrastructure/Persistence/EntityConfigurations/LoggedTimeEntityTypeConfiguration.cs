@@ -12,5 +12,11 @@ public class LoggedTimeEntityTypeConfiguration : IEntityTypeConfiguration<Logged
 
         builder.Property(_ => _.Id)
             .HasColumnName("LoggedTimeId");
+
+        builder.HasIndex(_ => _.FloatId)
+            .IsUnique();
+
+        builder.Property(_ => _.FloatId)
+            .HasMaxLength(24);
     }
 }

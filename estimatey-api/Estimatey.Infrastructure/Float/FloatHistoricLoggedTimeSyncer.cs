@@ -4,7 +4,6 @@ using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualStudio.Services.Common;
 
 namespace Estimatey.Infrastructure.Float;
 
@@ -49,20 +48,20 @@ public class FloatHistoricLoggedTimeSyncer
 
     private async Task SyncProject(ProjectEntity project, List<FloatPersonEntity> people)
     {
-        DateOnly? syncLoggedTimeFrom = project.LoggedTimeHasBeenSyncedUntil.HasValue ?
-            project.LoggedTimeHasBeenSyncedUntil.Value.AddDays(1) :
-            null;
-
         var syncLoggedTimeUntil = DateOnly.FromDateTime(_dateTimeService.Now.AddDays(-_persistLoggedTimeBeforeDaysAgo - 1));
 
-        _logger.LogDebug("Syncing historic logged time for project {projectId} between {startDate} and {endDate}.", project.Id, syncLoggedTimeFrom, syncLoggedTimeUntil);
-
-        if (syncLoggedTimeFrom is not null &&
-            syncLoggedTimeFrom >= syncLoggedTimeUntil)
+        if (project.LoggedTimeHasBeenSyncedUntil is not null &&
+            project.LoggedTimeHasBeenSyncedUntil >= syncLoggedTimeUntil)
         {
             _logger.LogInformation("Historic logged time is up to date so no need to sync.");
             return;
         }
+
+        DateOnly? syncLoggedTimeFrom = project.LoggedTimeHasBeenSyncedUntil.HasValue ?
+            project.LoggedTimeHasBeenSyncedUntil.Value.AddDays(1) :
+            null;
+
+        _logger.LogDebug("Syncing historic logged time for project {projectId} between {startDate} and {endDate}.", project.Id, syncLoggedTimeFrom, syncLoggedTimeUntil);
 
         var historicLoggedTime = await _floatClient.GetLoggedTime(project.FloatId, syncLoggedTimeFrom, syncLoggedTimeUntil);
 

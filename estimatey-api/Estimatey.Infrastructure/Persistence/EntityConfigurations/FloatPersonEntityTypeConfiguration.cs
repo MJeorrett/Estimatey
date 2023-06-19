@@ -13,6 +13,9 @@ public class FloatPersonEntityTypeConfiguration : IEntityTypeConfiguration<Float
         builder.Property(_ => _.Id)
             .HasColumnName("FloatPersonId");
 
+        builder.HasIndex(_ => _.FloatId)
+            .IsUnique();
+
         builder.Property(_ => _.Name)
             .HasMaxLength(64);
     }
