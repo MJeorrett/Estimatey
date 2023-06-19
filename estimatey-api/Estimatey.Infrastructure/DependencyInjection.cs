@@ -21,7 +21,7 @@ public static class DependencyInjection
         services.AddScoped<LinksSynchronizationService>();
         services.AddScoped<FloatHistoricLoggedTimeSyncer>();
 
-        //services.AddHostedService<ProjectsSynchronizationService>();
+        services.AddHostedService<ProjectsSynchronizationService>();
         services.AddHttpClient<DevOpsClient>();
         services.AddHttpClient<FloatClient>();
 
