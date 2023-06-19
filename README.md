@@ -7,6 +7,7 @@ Estimatey hooks into the tools that you already use** and provides insights that
 
 ## Limitations
 - Azure DevOps syncing service keeps the same token for ever so will probably fall over after about 1 hour at the moment...
+- On startup we sync historic logged time from float.  Float has restrictions on the size of date range you can request and so at the moment we can only sync up to 1 year of historic data.
 
 ## Road Map
 - :construction: Write service to sync logged time from Float.
@@ -21,7 +22,8 @@ Estimatey hooks into the tools that you already use** and provides insights that
 - Data quality warnings
     - If parent is complete but children aren't.
     - Ticket in progress but no user assigned.
-    - Ticket as been in progress for too long.
+    - Ticket in progress but no branch created.
+    - Ticket has been in progress for too long.
     - Ticket or User Story doesn't have a feature.
     - User not specified as Developer, Designer etc.
 - PR analytics
