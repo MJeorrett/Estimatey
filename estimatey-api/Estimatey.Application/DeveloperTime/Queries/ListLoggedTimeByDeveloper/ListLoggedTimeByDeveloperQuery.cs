@@ -20,19 +20,23 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
     private readonly IFloatClient _floatClient;
     private readonly IApplicationDbContext _dbContext;
     private readonly ILogger _logger;
+    private readonly IDateTimeService _dateTimeService;
+
     private readonly List<int> _excludedFloatPersonIds;
 
     public ListLoggedTimeByDeveloperQueryHandler(
         IFloatClient floatClient,
         IApplicationDbContext dbContext,
         ILogger<ListLoggedTimeByDeveloperQueryHandler> logger,
-        IOptions<GlobalOptions> options)
+        IOptions<GlobalOptions> options,
+        IDateTimeService dateTimeService)
     {
         _floatClient = floatClient;
         _dbContext = dbContext;
         _logger = logger;
 
         _excludedFloatPersonIds = options.Value.ExcludedFloatPersonIds;
+        _dateTimeService = dateTimeService;
     }
 
     public async Task<AppResponse<List<DeveloperLoggedTime>>> Handle(
@@ -58,11 +62,29 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
 
     private async Task<List<LoggedTimeDto>> GetLoggedDeveloperTime(ProjectEntity project)
     {
-        var allLoggedTime = await _floatClient.GetLoggedTime(project.FloatId);
+        var historicLoggedTime = await _dbContext.LoggedTime
+            .Where(_ => !_excludedFloatPersonIds.Contains(_.FloatPerson.FloatId))
+            .Select(_ => new LoggedTimeDto()
+            {
+                Id = _.FloatId,
+                PersonId = _.FloatPerson.FloatId,
+                Date = _.Date.ToString("yyyy-MM-dd"),
+                Hours = _.Hours,
+                Locked = _.Locked,
+                LockedDate = _.LockedDate == null ? null :_.LockedDate.Value.ToString("yyyy-MM-dd"),
+            })
+            .ToListAsync();
 
-        return allLoggedTime
+        var recentLoggedTime = await _floatClient.GetLoggedTime(
+            project.FloatId,
+            project.LoggedTimeHasBeenSyncedUntil?.AddDays(1),
+            DateOnly.FromDateTime(_dateTimeService.Now));
+
+        return recentLoggedTime
             .Where(loggedTime =>
                 !_excludedFloatPersonIds.Contains(loggedTime.PersonId))
+            .Concat(historicLoggedTime)
+            .OrderBy(_ => _.Date)
             .ToList();
     }
 
