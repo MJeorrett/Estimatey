@@ -3,17 +3,18 @@ using Estimatey.Infrastructure.DevOps.Models;
 using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Estimatey.Infrastructure.DevOps;
 
 internal class WorkItemSynchronizationService
 {
-    private const int PauseBetweenSyncsMilliseconds = 8000;
-
     private readonly ILogger _logger;
     private readonly DevOpsClient _devOpsClient;
     private readonly ApplicationDbContext _dbContext;
+
+    private static readonly ConcurrentDictionary<int, SemaphoreSlim> _semaphores = new();
 
     public WorkItemSynchronizationService(
         ILogger<WorkItemSynchronizationService> logger,
@@ -27,21 +28,31 @@ internal class WorkItemSynchronizationService
 
     public async Task SyncProject(ProjectEntity project)
     {
-        _logger.LogInformation("Syncing work items for project {projectName}.", project.DevOpsProjectName);
+        var semaphore = _semaphores.GetOrAdd(project.Id, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync();
 
-        var workItemRevisionsBatch = await _devOpsClient.GetWorkItemRevisionsBatch(project.DevOpsProjectName, project.WorkItemsContinuationToken);
-
-        await ProcessWorkItemRevisions(project, workItemRevisionsBatch);
-
-        var recycleBinWorkItems = await _devOpsClient.GetRecycleBinWorkItems(project.DevOpsProjectName);
-
-        await ProcessRecycleBinWorkItems(recycleBinWorkItems);
-
-        _logger.LogInformation("Successfully synced work items for project {projectName}.", project.DevOpsProjectName);
-
-        if (!workItemRevisionsBatch.IsLastBatch)
+        try
         {
-            await SyncProject(project);
+            _logger.LogInformation("Syncing work items for project {projectName}.", project.DevOpsProjectName);
+
+            var workItemRevisionsBatch = await _devOpsClient.GetWorkItemRevisionsBatch(project.DevOpsProjectName, project.WorkItemsContinuationToken);
+
+            await ProcessWorkItemRevisions(project, workItemRevisionsBatch);
+
+            var recycleBinWorkItems = await _devOpsClient.GetRecycleBinWorkItems(project.DevOpsProjectName);
+
+            await ProcessRecycleBinWorkItems(recycleBinWorkItems);
+
+            _logger.LogInformation("Successfully synced work items for project {projectName}.", project.DevOpsProjectName);
+
+            if (!workItemRevisionsBatch.IsLastBatch)
+            {
+                await SyncProject(project);
+            }
+        }
+        finally
+        {
+            semaphore.Release();
         }
     }
 

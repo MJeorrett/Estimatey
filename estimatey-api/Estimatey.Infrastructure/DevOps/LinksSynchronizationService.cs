@@ -3,6 +3,7 @@ using Estimatey.Infrastructure.DevOps.Models;
 using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace Estimatey.Infrastructure.DevOps;
 
@@ -13,6 +14,8 @@ internal class LinksSynchronizationService
     public readonly DevOpsClient _devOpsClient;
 
     public readonly ApplicationDbContext _dbContext;
+
+    private static readonly ConcurrentDictionary<int, SemaphoreSlim> _semaphores = new();
 
     public LinksSynchronizationService(
         ILogger<LinksSynchronizationService> logger,
@@ -26,17 +29,28 @@ internal class LinksSynchronizationService
 
     public async Task SyncProject(ProjectEntity project)
     {
-        _logger.LogInformation("Syncing links for project {projectName}.", project.DevOpsProjectName);
+        var semaphore = _semaphores.GetOrAdd(project.Id, _ => new SemaphoreSlim(1, 1));
 
-        var workItemLinksBatch = await _devOpsClient.GetWorkItemLinksBatch(project.DevOpsProjectName, project.LinksContinuationToken)
-;
-        await ProcessWorkItemLinks(project, workItemLinksBatch);
+        await semaphore.WaitAsync();
 
-        _logger.LogInformation("Successfully synced links for project {projectName}.", project.DevOpsProjectName);
-
-        if (!workItemLinksBatch.IsLastBatch)
+        try
         {
-            await SyncProject(project);
+            _logger.LogInformation("Syncing links for project {projectName}.", project.DevOpsProjectName);
+
+            var workItemLinksBatch = await _devOpsClient.GetWorkItemLinksBatch(project.DevOpsProjectName, project.LinksContinuationToken)
+    ;
+            await ProcessWorkItemLinks(project, workItemLinksBatch);
+
+            _logger.LogInformation("Successfully synced links for project {projectName}.", project.DevOpsProjectName);
+
+            if (!workItemLinksBatch.IsLastBatch)
+            {
+                await SyncProject(project);
+            }
+        }
+        finally
+        {
+            semaphore.Release();
         }
     }
 
