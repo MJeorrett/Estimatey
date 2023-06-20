@@ -10,9 +10,6 @@ Estimatey hooks into the tools that you already use** and provides insights that
 - On startup we sync historic logged time from float.  Float has restrictions on the size of date range you can request and so at the moment we can only sync up to 1 year of historic data.
 
 ## Road Map
-- :construction: Write service to sync logged time from Float.
-    - :construction: Basic implementation fetch all every time.
-    - Persist historic data - after say a month we can assume that logged time won't change or maybe we can read the `locked` parameter.  We need to do this so we aren't fetching an every growing list of time logs and / or hit the 200 per page limit which means we would have to do paginated fetching. Will also need to support syncing historic data for a newly hooked up project with lots of logged time - this could be tricky...
 - Last sync / next sync indicator
 - See if base workItem table would make things easier.
 - See if we can remove DevOpsId and insert id from DevOps into the Id column.
@@ -31,6 +28,9 @@ Estimatey hooks into the tools that you already use** and provides insights that
     - Warning when PR open for too long.
 
 ## Completed features
+- :white_check_mark: Write service to sync logged time from Float.
+    - :white_check_mark: Basic implementation fetch all every time.
+    - :white_check_mark: Persist historic data - after say a month we can assume that logged time won't change or maybe we can read the `locked` parameter.  We need to do this so we aren't fetching an every growing list of time logs and / or hit the 200 per page limit which means we would have to do paginated fetching. Will also need to support syncing historic data for a newly hooked up project with lots of logged time - this could be tricky...
 - :white_check_mark: Write service to sync work items from DevOps including features, user stories, tasks and their tags.
 - :white_check_mark: Write service to sync work item relationships from DevOps.
 - :white_check_mark: Make deleting more robust by storing last revised date and then only marking deleted if deleted date is after last revised date. NOTE: Turns out I don't think we need this as delete runs after update.  Lets see how we go and tweak if necessary.
