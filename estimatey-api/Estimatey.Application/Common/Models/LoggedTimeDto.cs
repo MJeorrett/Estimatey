@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using Estimatey.Core.Entities;
+using System.Text.Json.Serialization;
 
 namespace Estimatey.Application.Common.Models;
 

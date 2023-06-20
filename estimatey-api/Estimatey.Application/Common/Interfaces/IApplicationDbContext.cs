@@ -17,5 +17,7 @@ public interface IApplicationDbContext
 
     DbSet<FloatPersonEntity> FloatPeople { get; }
 
+    DbSet<LoggedTimeEntity> LoggedTime { get;}
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
