@@ -127,6 +127,20 @@ internal class WorkItemSynchronizationService
 
                         break;
                     }
+
+                case "Bug":
+                    {
+                        _logger.LogDebug("Upserting Bug {id}.", workItemRevision.Id);
+
+                        var existingBug = await _dbContext.Bugs
+                            .IgnoreQueryFilters()
+                            .Include(_ => _.Tags)
+                            .FirstOrDefaultAsync(_ => _.DevOpsId == workItemRevision.Id);
+
+                        await UpsertWorkItem(project.Id, existingBug, workItemRevision);
+
+                        break;
+                    }
             }
         }
 
@@ -142,6 +156,7 @@ internal class WorkItemSynchronizationService
         var features = await _dbContext.Features.ToListAsync();
         var userStories = await _dbContext.UserStories.ToListAsync();
         var tickets = await _dbContext.Tickets.ToListAsync();
+        var bugs = await _dbContext.Bugs.ToListAsync();
 
         foreach (var workItem in workItems)
         {
@@ -166,6 +181,14 @@ internal class WorkItemSynchronizationService
             if (ticket is not null)
             {
                 ticket.IsDeleted = true;
+                continue;
+            }
+
+            var bug = bugs.FirstOrDefault(_ => _.DevOpsId == workItem.Id);
+
+            if (bug is not null)
+            {
+                bug.IsDeleted = true;
                 continue;
             }
         }

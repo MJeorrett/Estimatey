@@ -13,6 +13,8 @@ public interface IApplicationDbContext
 
     DbSet<TicketEntity> Tickets { get; }
 
+    DbSet<BugEntity> Bugs { get; }
+
     DbSet<TagEntity> Tags { get; }
 
     DbSet<FloatPersonEntity> FloatPeople { get; }

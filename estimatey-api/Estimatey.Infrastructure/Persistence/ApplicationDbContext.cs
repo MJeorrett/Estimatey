@@ -16,6 +16,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public DbSet<TicketEntity> Tickets { get; init; }
 
+    public DbSet<BugEntity> Bugs { get; init; }
+
     public DbSet<TagEntity> Tags { get; init; }
 
     public DbSet<FloatPersonEntity> FloatPeople { get; init; }

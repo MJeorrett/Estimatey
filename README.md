@@ -8,6 +8,7 @@ Estimatey hooks into the tools that you already use** and provides insights that
 ## Limitations
 - Azure DevOps syncing service keeps the same token for ever so will probably fall over after about 1 hour at the moment...
 - On startup we sync historic logged time from float.  Float has restrictions on the size of date range you can request and so at the moment we can only sync up to 1 year of historic data.
+- Assumes that Bugs are managed alongside tickets (not User Stories).
 
 ## Road Map
 - Last sync / next sync indicator

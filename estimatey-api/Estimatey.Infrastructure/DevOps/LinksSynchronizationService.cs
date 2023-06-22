@@ -4,6 +4,7 @@ using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Estimatey.Infrastructure.DevOps;
 
@@ -54,10 +55,6 @@ internal class LinksSynchronizationService
             _logger.LogInformation("Successfully synced links for project {projectName}.", project.DevOpsProjectName);
             return workItemLinksBatch;
 
-            if (!workItemLinksBatch.IsLastBatch)
-            {
-                await SyncProject(project);
-            }
         }
         finally
         {
@@ -73,9 +70,13 @@ internal class LinksSynchronizationService
 
         var userStories = await _dbContext.UserStories
             .Include(_ => _.Tickets)
+            .Include(_ => _.Bugs)
             .ToListAsync();
 
         var tickets = await _dbContext.Tickets
+            .ToListAsync();
+
+        var bugs = await _dbContext.Bugs
             .ToListAsync();
 
         foreach (var workItemLink in workItemLinksBatch.Values)
@@ -83,11 +84,17 @@ internal class LinksSynchronizationService
             if (workItemLink.LinkType != "System.LinkTypes.Hierarchy-Forward") continue;
 
             var (sourceFeature, sourceUserStory) = ResolveFeatureOrUserStoryWithId(features, userStories, workItemLink.SourceId);
-            var (targetUserStory, targetTicket) = ResolveUserStoryOrTicketWithId(userStories, tickets, workItemLink.TargetId);
+            var (targetUserStory, targetTicket, targetBug) = ResolveUserStoryTicketOrBugWithId(userStories, tickets, bugs, workItemLink.TargetId);
 
             if (sourceFeature is not null && targetTicket is not null)
             {
                 _logger.LogInformation("Unexpected combination of source feature {featureId} and target ticket {ticketId}.", sourceFeature.Id, targetTicket.Id);
+                continue;
+            }
+
+            if (sourceFeature is not null && targetBug is not null)
+            {
+                _logger.LogInformation("Unexpected combination of source feature {featureId} and target bug {bugId}.", sourceFeature.Id, targetBug.Id);
                 continue;
             }
 
@@ -98,7 +105,7 @@ internal class LinksSynchronizationService
             }
 
             if ((sourceFeature is null && sourceUserStory is null) ||
-                (targetUserStory is null && targetTicket is null))
+                (targetUserStory is null && targetTicket is null && targetBug is null))
             {
                 _logger.LogWarning("No source or target work items found.");
                 continue;
@@ -118,13 +125,19 @@ internal class LinksSynchronizationService
                 }
                 else
                 {
-                    if (targetTicket is null)
+                    if (targetTicket is not null)
                     {
-                        _logger.LogInformation("Expected target ticket for source user story {userStoryId}.", sourceUserStory!.Id);
+                        sourceUserStory!.Tickets.Add(targetTicket);
+                    }
+                    else if (targetBug is not null)
+                    {
+                        sourceUserStory!.Bugs.Add(targetBug);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Expected target ticket or bug for source user story {userStoryId}.", sourceUserStory!.Id);
                         continue;
                     }
-
-                    sourceUserStory!.Tickets.Add(targetTicket);
                 }
             }
             else
@@ -141,13 +154,20 @@ internal class LinksSynchronizationService
                 }
                 else
                 {
-                    if (targetTicket is null)
+                    if (targetTicket is not null)
+                    {
+                        sourceUserStory!.Tickets.Remove(targetTicket);
+                    }
+                    else if (targetBug is not null)
+                    {
+                        sourceUserStory!.Bugs.Remove(targetBug);
+                    }
+                    else
                     {
                         _logger.LogInformation("Expected target ticket for source user story {userStoryId}.", sourceUserStory!.Id);
                         continue;
                     }
 
-                    sourceUserStory!.Tickets.Remove(targetTicket);
                 }
             }
         }
@@ -178,21 +198,26 @@ internal class LinksSynchronizationService
         return (null, null);
     }
 
-    private (UserStoryEntity? Feature, TicketEntity? UserStory) ResolveUserStoryOrTicketWithId(
+    private (UserStoryEntity? Feature, TicketEntity? UserStory, BugEntity? Bug) ResolveUserStoryTicketOrBugWithId(
         List<UserStoryEntity> userStories,
         List<TicketEntity> tickets,
+        List<BugEntity> bugs,
         int id)
     {
         var userStory = userStories.FirstOrDefault(_ => _.DevOpsId == id);
 
-        if (userStory is not null) return (userStory, null);
+        if (userStory is not null) return (userStory, null, null);
 
         var ticket = tickets.FirstOrDefault(_ => _.DevOpsId == id);
 
-        if (ticket is not null) return (null, ticket);
+        if (ticket is not null) return (null, ticket, null);
+
+        var bug = bugs.FirstOrDefault(_ => _.DevOpsId == id);
+
+        if (bug is not null) return (null, null, bug);
 
         _logger.LogInformation("Failed to find user story or ticket with id {id}.", id);
 
-        return (null, null);
+        return (null, null, null);
     }
 }
