@@ -4,19 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Estimatey.Infrastructure.Persistence.EntityConfigurations;
 
-internal class TicketEntityTypeConfiguration : IEntityTypeConfiguration<TicketEntity>
+internal class TicketEntityTypeConfiguration : WorkItemEntityTypeConfiguration<TicketEntity>
 {
-    public void Configure(EntityTypeBuilder<TicketEntity> builder)
+    public override void Configure(EntityTypeBuilder<TicketEntity> builder)
     {
+        base.Configure(builder);
+
         builder.ToTable("Ticket");
 
         builder.Property(_ => _.Id)
             .HasColumnName("TicketId");
-
-        builder.HasIndex(_ => _.DevOpsId)
-            .IsUnique();
-
-        builder.Property(_ => _.State)
-            .HasMaxLength(16);
     }
 }

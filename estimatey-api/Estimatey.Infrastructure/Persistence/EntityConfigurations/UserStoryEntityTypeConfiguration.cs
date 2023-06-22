@@ -4,19 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Estimatey.Infrastructure.Persistence.EntityConfigurations;
 
-internal class UserStoryEntityTypeConfiguration : IEntityTypeConfiguration<UserStoryEntity>
+internal class UserStoryEntityTypeConfiguration : WorkItemEntityTypeConfiguration<UserStoryEntity>
 {
-    public void Configure(EntityTypeBuilder<UserStoryEntity> builder)
+    public override void Configure(EntityTypeBuilder<UserStoryEntity> builder)
     {
+        base.Configure(builder);
+
         builder.ToTable("UserStory");
 
         builder.Property(_ => _.Id)
             .HasColumnName("UserStoryId");
-
-        builder.HasIndex(_ => _.DevOpsId)
-            .IsUnique();
-
-        builder.Property(_ => _.State)
-            .HasMaxLength(16);
     }
 }

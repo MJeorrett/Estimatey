@@ -20,4 +20,6 @@ public abstract class WorkItemEntity
     public DateTime CreatedDate { get; set; }
 
     public DateTime ChangedDate { get; set; }
+
+    public string? Iteration { get; set; }
 }
