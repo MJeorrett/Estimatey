@@ -28,9 +28,20 @@ internal class WorkItemSynchronizationService
 
     public async Task SyncProject(ProjectEntity project)
     {
+        var workItemRevisionsBatch = await SyncProjectInternal(project);
+
+        if (!workItemRevisionsBatch.IsLastBatch)
+        {
+            Thread.Sleep(100);
+
+            await SyncProject(project);
+        }
+    }
+
+    private async Task<WorkItemRevisionsBatch> SyncProjectInternal(ProjectEntity project)
+    {
         var semaphore = _semaphores.GetOrAdd(project.Id, _ => new SemaphoreSlim(1, 1));
         await semaphore.WaitAsync();
-
         try
         {
             _logger.LogInformation("Syncing work items for project {projectName}.", project.DevOpsProjectName);
@@ -44,11 +55,7 @@ internal class WorkItemSynchronizationService
             await ProcessRecycleBinWorkItems(recycleBinWorkItems);
 
             _logger.LogInformation("Successfully synced work items for project {projectName}.", project.DevOpsProjectName);
-
-            if (!workItemRevisionsBatch.IsLastBatch)
-            {
-                await SyncProject(project);
-            }
+            return workItemRevisionsBatch;
         }
         finally
         {
@@ -170,7 +177,7 @@ internal class WorkItemSynchronizationService
         int projectId,
         T? existingWorkItem,
         WorkItemRevision workItemRevision)
-        where T: WorkItemEntity, new()
+        where T : WorkItemEntity, new()
     {
         var tagEntities = await _dbContext.Tags.
             Where(_ => workItemRevision.Tags.Contains(_.Name))
@@ -185,6 +192,7 @@ internal class WorkItemSynchronizationService
             existingWorkItem.Tags = tagEntities;
             existingWorkItem.IsDeleted = false;
             existingWorkItem.ChangedDate = workItemRevision.Fields.ChangedDate;
+            existingWorkItem.Iteration = workItemRevision.Fields.IterationLevel2;
         }
         else
         {
@@ -199,6 +207,7 @@ internal class WorkItemSynchronizationService
                 Tags = tagEntities,
                 CreatedDate = workItemRevision.Fields.CreatedDate,
                 ChangedDate = workItemRevision.Fields.ChangedDate,
+                Iteration = workItemRevision.Fields.IterationLevel2,
             });
         }
     }

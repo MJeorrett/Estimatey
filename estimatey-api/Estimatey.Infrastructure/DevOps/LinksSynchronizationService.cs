@@ -29,6 +29,16 @@ internal class LinksSynchronizationService
 
     public async Task SyncProject(ProjectEntity project)
     {
+        var workItemLinksBatch = await SyncProjectInternal(project);
+
+        if (!workItemLinksBatch.IsLastBatch)
+        {
+            await SyncProject(project);
+        }
+    }
+
+    private async Task<WorkItemLinksBatch> SyncProjectInternal(ProjectEntity project)
+    {
         var semaphore = _semaphores.GetOrAdd(project.Id, _ => new SemaphoreSlim(1, 1));
 
         await semaphore.WaitAsync();
@@ -42,6 +52,7 @@ internal class LinksSynchronizationService
             await ProcessWorkItemLinks(project, workItemLinksBatch);
 
             _logger.LogInformation("Successfully synced links for project {projectName}.", project.DevOpsProjectName);
+            return workItemLinksBatch;
 
             if (!workItemLinksBatch.IsLastBatch)
             {
