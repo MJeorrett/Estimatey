@@ -75,6 +75,7 @@ public class FloatHistoricLoggedTimeSyncer
 
             var loggedTimeEntities = historicLoggedTime.Select(_ => new LoggedTimeEntity
             {
+                ProjectId = project.Id,
                 FloatId = _.Id,
                 FloatPersonId = people.First(person => person.FloatId == _.PersonId).Id,
                 Date = DateOnly.Parse(_.Date),
