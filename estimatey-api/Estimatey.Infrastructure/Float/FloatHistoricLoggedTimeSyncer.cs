@@ -56,7 +56,7 @@ public class FloatHistoricLoggedTimeSyncer
 
         try
         {
-            var syncLoggedTimeUntil = DateOnly.FromDateTime(_dateTimeService.Now.AddDays(-_persistLoggedTimeBeforeDaysAgo - 1));
+            var syncLoggedTimeUntil = _dateTimeService.NowDateOnly.AddDays(-_persistLoggedTimeBeforeDaysAgo - 1);
 
             if (project.LoggedTimeHasBeenSyncedUntil is not null &&
                 project.LoggedTimeHasBeenSyncedUntil >= syncLoggedTimeUntil)

@@ -78,7 +78,7 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
         var recentLoggedTime = await _floatClient.GetLoggedTime(
             project.FloatId,
             project.LoggedTimeHasBeenSyncedUntil?.AddDays(1),
-            DateOnly.FromDateTime(_dateTimeService.Now));
+            _dateTimeService.NowDateOnly);
 
         return recentLoggedTime
             .Where(loggedTime =>
