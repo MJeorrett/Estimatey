@@ -4,6 +4,7 @@ using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Estimatey.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230622213127_AddBugTable")]
+    partial class AddBugTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -205,17 +208,12 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("LockedDate")
                         .HasColumnType("date");
 
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("FloatId")
                         .IsUnique();
 
                     b.HasIndex("FloatPersonId");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("LoggedTime", (string)null);
                 });
@@ -440,7 +438,7 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Estimatey.Core.Entities.FeatureEntity", b =>
                 {
                     b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("Features")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -471,21 +469,13 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("LoggedTime")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("FloatPerson");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("Estimatey.Core.Entities.TicketEntity", b =>
                 {
                     b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("Tickets")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -521,7 +511,7 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                         .HasForeignKey("FeatureId");
 
                     b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("UserStories")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -554,17 +544,6 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Estimatey.Core.Entities.FloatPersonEntity", b =>
                 {
                     b.Navigation("LoggedTime");
-                });
-
-            modelBuilder.Entity("Estimatey.Core.Entities.ProjectEntity", b =>
-                {
-                    b.Navigation("Features");
-
-                    b.Navigation("LoggedTime");
-
-                    b.Navigation("Tickets");
-
-                    b.Navigation("UserStories");
                 });
 
             modelBuilder.Entity("Estimatey.Core.Entities.UserStoryEntity", b =>

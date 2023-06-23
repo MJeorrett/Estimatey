@@ -31,6 +31,12 @@ public class TagEntityTypeConfiguration : IEntityTypeConfiguration<TagEntity>
                 r => r.HasOne<TicketEntity>().WithMany().HasForeignKey(_ => _.TicketId),
                 l => l.HasOne<TagEntity>().WithMany().HasForeignKey(_ => _.TagId));
 
+        builder.HasMany(_ => _.Bugs)
+            .WithMany(_ => _.Tags)
+            .UsingEntity<BugTagEntity>(
+                r => r.HasOne<BugEntity>().WithMany().HasForeignKey(_ => _.BugId),
+                l => l.HasOne<TagEntity>().WithMany().HasForeignKey(_ => _.TagId));
+
         builder.HasIndex(_ => _.Name)
             .IsUnique();
     }

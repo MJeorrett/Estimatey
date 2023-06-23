@@ -4,6 +4,7 @@ using Estimatey.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Estimatey.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230622204326_AddIterationToWorkItem")]
+    partial class AddIterationToWorkItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,73 +24,6 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Estimatey.Core.Entities.BugEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("BugId");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("ChangedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DevOpsId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Iteration")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("UserStoryId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DevOpsId")
-                        .IsUnique();
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("UserStoryId");
-
-                    b.ToTable("Bug", (string)null);
-                });
-
-            modelBuilder.Entity("Estimatey.Core.Entities.BugTagEntity", b =>
-                {
-                    b.Property<int>("BugId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TagId")
-                        .HasColumnType("int");
-
-                    b.HasKey("BugId", "TagId");
-
-                    b.HasIndex("TagId");
-
-                    b.ToTable("BugTag", (string)null);
-                });
 
             modelBuilder.Entity("Estimatey.Core.Entities.FeatureEntity", b =>
                 {
@@ -205,17 +141,12 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("LockedDate")
                         .HasColumnType("date");
 
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("FloatId")
                         .IsUnique();
 
                     b.HasIndex("FloatPersonId");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("LoggedTime", (string)null);
                 });
@@ -405,42 +336,10 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                     b.ToTable("UserStoryTag", (string)null);
                 });
 
-            modelBuilder.Entity("Estimatey.Core.Entities.BugEntity", b =>
-                {
-                    b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Estimatey.Core.Entities.UserStoryEntity", "UserStory")
-                        .WithMany("Bugs")
-                        .HasForeignKey("UserStoryId");
-
-                    b.Navigation("Project");
-
-                    b.Navigation("UserStory");
-                });
-
-            modelBuilder.Entity("Estimatey.Core.Entities.BugTagEntity", b =>
-                {
-                    b.HasOne("Estimatey.Core.Entities.BugEntity", null)
-                        .WithMany()
-                        .HasForeignKey("BugId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Estimatey.Core.Entities.TagEntity", null)
-                        .WithMany()
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Estimatey.Core.Entities.FeatureEntity", b =>
                 {
                     b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("Features")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -471,21 +370,13 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("LoggedTime")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("FloatPerson");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("Estimatey.Core.Entities.TicketEntity", b =>
                 {
                     b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("Tickets")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -521,7 +412,7 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                         .HasForeignKey("FeatureId");
 
                     b.HasOne("Estimatey.Core.Entities.ProjectEntity", "Project")
-                        .WithMany("UserStories")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -556,21 +447,8 @@ namespace Estimatey.Infrastructure.Persistence.Migrations
                     b.Navigation("LoggedTime");
                 });
 
-            modelBuilder.Entity("Estimatey.Core.Entities.ProjectEntity", b =>
-                {
-                    b.Navigation("Features");
-
-                    b.Navigation("LoggedTime");
-
-                    b.Navigation("Tickets");
-
-                    b.Navigation("UserStories");
-                });
-
             modelBuilder.Entity("Estimatey.Core.Entities.UserStoryEntity", b =>
                 {
-                    b.Navigation("Bugs");
-
                     b.Navigation("Tickets");
                 });
 #pragma warning restore 612, 618

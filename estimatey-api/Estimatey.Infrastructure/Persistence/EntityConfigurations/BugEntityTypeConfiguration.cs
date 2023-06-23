@@ -4,15 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Estimatey.Infrastructure.Persistence.EntityConfigurations;
 
-internal class FeatureEntityTypeConfiguration : WorkItemEntityTypeConfiguration<FeatureEntity>
+internal class BugEntityTypeConfiguration : WorkItemEntityTypeConfiguration<BugEntity>
 {
-    public override void Configure(EntityTypeBuilder<FeatureEntity> builder)
+    public override void Configure(EntityTypeBuilder<BugEntity> builder)
     {
         base.Configure(builder);
 
-        builder.ToTable("Feature");
+        builder.ToTable("Bug");
 
         builder.Property(_ => _.Id)
-            .HasColumnName("FeatureId");
+            .HasColumnName("BugId");
     }
 }

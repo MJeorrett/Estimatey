@@ -52,4 +52,7 @@ internal record WorkItemRevisionField
 
     [JsonPropertyName("System.ChangedDate")]
     public DateTime ChangedDate { get; init; }
+
+    [JsonPropertyName("System.IterationLevel2")]
+    public string? IterationLevel2 { get; init; }
 }

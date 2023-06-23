@@ -6,6 +6,9 @@ public class LoggedTimeEntity
 {
     public int Id { get; init; }
 
+    public int ProjectId { get; init; }
+    public ProjectEntity Project { get; init; } = null!;
+
     public string FloatId { get; init; } = "";
 
     public int FloatPersonId { get; init; }

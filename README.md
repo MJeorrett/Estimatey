@@ -8,6 +8,7 @@ Estimatey hooks into the tools that you already use** and provides insights that
 ## Limitations
 - Azure DevOps syncing service keeps the same token for ever so will probably fall over after about 1 hour at the moment...
 - On startup we sync historic logged time from float.  Float has restrictions on the size of date range you can request and so at the moment we can only sync up to 1 year of historic data.
+- Assumes that Bugs are managed alongside tickets (not User Stories).
 
 ## Road Map
 - Last sync / next sync indicator
@@ -15,6 +16,7 @@ Estimatey hooks into the tools that you already use** and provides insights that
 - See if we can remove DevOpsId and insert id from DevOps into the Id column.
 - Basic predictions page
 ![Basic predictions page](./readme-images/basic-predictions-page.png)
+- Float start date against project - time is often logged for discovery workshops etc which will skew the "development as usual" figures.
 - Normalize work item statuses - take whatever DevOps has and convert to "New", "In progress", "Complete". Configurable mappings.
 - Data quality warnings
     - If parent is complete but children aren't.

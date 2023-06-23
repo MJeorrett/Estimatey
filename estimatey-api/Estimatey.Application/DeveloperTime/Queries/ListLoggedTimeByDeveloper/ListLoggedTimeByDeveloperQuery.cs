@@ -57,13 +57,13 @@ public class ListLoggedTimeByDeveloperQueryHandler : IRequestHandler<ListLoggedT
 
         var developerLoggedTime = DeveloperLoggedTime.MapFromLoggedTime(loggedDeveloperTime, people);
 
-        return new(200, developerLoggedTime);
+        return new(200, developerLoggedTime.OrderByDescending(_ => _.TotalLoggedHours).ToList());
     }
 
     private async Task<List<LoggedTimeDto>> GetLoggedDeveloperTime(ProjectEntity project)
     {
         var historicLoggedTime = await _dbContext.LoggedTime
-            .Where(_ => !_excludedFloatPersonIds.Contains(_.FloatPerson.FloatId))
+            .Where(_ => _.ProjectId == project.Id && !_excludedFloatPersonIds.Contains(_.FloatPerson.FloatId))
             .Select(_ => new LoggedTimeDto()
             {
                 Id = _.FloatId,

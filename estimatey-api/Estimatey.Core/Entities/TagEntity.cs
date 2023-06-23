@@ -11,4 +11,6 @@ public class TagEntity
     public List<UserStoryEntity> UserStories { get; set; } = null!;
 
     public List<TicketEntity> Tickets { get; set; } = null!;
+
+    public List<BugEntity> Bugs { get; set; } = null!;
 }
